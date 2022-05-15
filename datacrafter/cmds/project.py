@@ -26,9 +26,9 @@ class Project:
         """Init project class"""
         self.project = None
         self.project_path = os.getcwd() if project_path is None else project_path
-        self.project_filename = os.path.join(self.project_path, 'pumpilo.yml')
+        self.project_filename = os.path.join(self.project_path, 'datacrafter.yml')
         self.__read_project_file(self.project_filename)
-        self.logfile = os.path.join(self.project_path, 'pumpilo.log')
+        self.logfile = os.path.join(self.project_path, 'log', 'datacrafter.log')
         self.state_file = os.path.join(self.project_path, 'state.json')
 
         dpath = os.path.join(self.project_path)

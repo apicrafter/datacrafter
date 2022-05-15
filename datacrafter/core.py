@@ -38,7 +38,7 @@ def cli2():
 @cli2.command()
 @click.option('--verbose', '-v', count=True, help='Verbose output. Print additional info on command execution')
 def log(verbose):
-    """Show log of latest operations"""
+    """Show log of latest operations (not yet)"""
     if verbose:
         enableVerbose()
     pass
@@ -62,7 +62,7 @@ def cli4():
 @cli4.command()
 @click.option('--verbose', '-v', count=True, help='Verbose output. Print additional info on command execution')
 def init(verbose):
-    """Initialize project"""
+    """Initialize project (not yet)"""
     if verbose:
         enableVerbose()
     pass
@@ -136,8 +136,8 @@ def cli10():
 @cli10.command()
 def version():
     """This tool version"""
-    from pumpilo import __version__
-    print('Pumpilo version %s' % (__version__))
+    from datacrafter import __version__
+    print('datacrafter version %s' % (__version__))
 
 
 @click.group()

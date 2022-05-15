@@ -6,7 +6,7 @@ import codecs
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 
-import pumpilo
+import datacrafter
 
 
 class PyTest(TestCommand):
@@ -16,7 +16,7 @@ class PyTest(TestCommand):
         TestCommand.finalize_options(self)
         self.test_args = [
             '--doctest-modules', '--verbose',
-            './pumpilo', './tests'
+            './datacrafter', './tests'
         ]
         self.test_suite = True
 
@@ -73,21 +73,21 @@ def long_description():
 
 
 setup(
-    name='pumpilo',
-    version=pumpilo.__version__,
-    description=pumpilo.__doc__.strip(),
+    name='datacrafter',
+    version=datacrafter.__version__,
+    description=datacrafter.__doc__.strip(),
     long_description=long_description(),
     long_description_content_type='text/x-rst',
-    url='https://github.com/apicrafter/pumpilo/',
-    download_url='https://github.com/apicrafter/pumpilo/',
+    url='https://github.com/apicrafter/datacrafter/',
+    download_url='https://github.com/apicrafter/datacrafter/',
     packages=find_packages(exclude=('tests', 'tests.*')),
     include_package_data=True,
-    author=pumpilo.__author__,
+    author=datacrafter.__author__,
     author_email='ivan@begtin.tech',
-    license=pumpilo.__licence__,
+    license=datacrafter.__licence__,
     entry_points={
         'console_scripts': [
-            'pumpilo = pumpilo.__main__:main',
+            'datacrafter = datacrafter.__main__:main',
         ],
     },
     extras_require=extras_require,

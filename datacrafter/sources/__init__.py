@@ -6,6 +6,7 @@ from .zipped import ZIPSourceWrapper
 from .zipxml import ZIPXMLSource
 from .csv import CSVSource
 from .jsonl import JSONLinesSource
+from .json import JSONSource
 from .xls import XLSSource
 from .xlsx import XLSXSource
 
@@ -19,7 +20,7 @@ def validate_options(options, required=[]):
 MAP_REQUIRED_OPTIONS = {'zipxml': ['tagname', ], 'xml' : ['tagname', ], 'xls' : ['keys',],
                         'xlsx' : ['keys', ], 'csv' : ['delimiter',]}
 
-FILEEXT_TO_SOURCETYPE = {'xml' : 'xml', 'xls' : 'xls', 'xlsx': 'xlsx', 'csv' : 'csv', 'jsonl' : 'jsonl', 'bson' : 'bson'}
+FILEEXT_TO_SOURCETYPE = {'xml' : 'xml', 'xls' : 'xls', 'xlsx': 'xlsx', 'csv' : 'csv', 'jsonl' : 'jsonl', 'bson' : 'bson', 'json' : 'json'}
 
 
 def get_source_from_file(filename, stype=None, options=None):
@@ -36,6 +37,10 @@ def get_source_from_file(filename, stype=None, options=None):
         validate_options(options, ['tagname',])
         logging.debug('Use XML source with filename %s, tag %s' % (filename, options['tagname']))
         return XMLSource(filename=filename, tagname=options['tagname'])
+    elif stype == 'json':
+#        validate_options(options, ['tagname', ])
+        logging.debug('Use JSON source with filename %s, tag %s' % (filename, options['tagname'] if 'tagname' in options.keys() else 'None'))
+        return JSONSource(filename=filename, tagname=options['tagname'] if 'tagname' in options.keys() else None)
     elif stype == 'xls':
         validate_options(options, ['keys',])
         if 'keys' in options.keys() and options['keys']:

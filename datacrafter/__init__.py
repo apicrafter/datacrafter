@@ -1,5 +1,5 @@
 """
-pumpilo: a command-line tool ETL with NoSQL in mind
+datacrafter: a command-line tool ETL with NoSQL in mind
 
 """
 

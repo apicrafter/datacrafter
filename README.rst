@@ -1,11 +1,11 @@
 ========================================================================================
-pumpilo -- a data extraction and packaging tool with autodocumentation and NoSQL support
+datacrafter -- a data ETL created for open data extraction and packaging tool with autodocumentation and NoSQL support
 ========================================================================================
 
 
-pumpilo is a command line tool that helps to extract NoSQL data from data sources and to package it for future use.
+datacrafter is a NoSQL ETL tool, a command line utility that helps to extract data from data sources and to package it for future use.
 Its goal is to make ETL tool with advanced features like automatic documentation, type conversion and so on.
-It provides a simple ``pumpilo`` command that allows run pipelines and to extract data from files and API, autodocument and process it.
+It provides a simple ``datacrafter`` command that allows run pipelines and to extract data from files and API, autodocument and process it.
 
 
 .. contents::
@@ -28,19 +28,19 @@ macOS
 -----
 
 
-On macOS, pumpilo can be installed via `Homebrew <https://brew.sh/>`_
+On macOS, datacrafter can be installed via `Homebrew <https://brew.sh/>`_
 (recommended):
 
 .. code-block:: bash
 
-    $ brew install pumpilo
+    $ brew install datacrafter
 
 
 A MacPorts *port* is also available:
 
 .. code-block:: bash
 
-    $ port install pumpilo
+    $ port install datacrafter
 
 Linux
 -----
@@ -51,22 +51,22 @@ system package manager, for example:
 .. code-block:: bash
 
     # Debian, Ubuntu, etc.
-    $ apt install pumpilo
+    $ apt install datacrafter
 
 .. code-block:: bash
 
     # Fedora
-    $ dnf install pumpilo
+    $ dnf install datacrafter
 
 .. code-block:: bash
 
     # CentOS, RHEL, ...
-    $ yum install pumpilo
+    $ yum install datacrafter
 
 .. code-block:: bash
 
     # Arch Linux
-    $ pacman -S pumpilo
+    $ pacman -S datacrafter
 
 
 Windows, etc.
@@ -81,11 +81,11 @@ and always provides the latest version) is to use pip:
     # Make sure we have an up-to-date version of pip and setuptools:
     $ pip install --upgrade pip setuptools
 
-    $ pip install --upgrade pumpilo
+    $ pip install --upgrade datacrafter
 
 
 (If ``pip`` installation fails for some reason, you can try
-``easy_install pumpilo`` as a fallback.)
+``easy_install datacrafter`` as a fallback.)
 
 
 Python version
@@ -103,10 +103,10 @@ Synopsis:
 
 .. code-block:: bash
 
-    $ pumpilo [flags] [command] 
+    $ datacrafter [flags] [command]
 
 
-See also ``pumpilo --help``.
+See also ``datacrafter --help``.
 
 
 Commands

@@ -3,9 +3,11 @@ from apibackuper.cmds.project import ProjectBuilder
 import logging
 import shutil
 import os
+from runpy import run_path
+
 FILEEXT_MAP = {'file-zip' : 'zip', 'file-xls' : 'xls', 'file-csv' : 'csv', 'file-xml' : 'xml', 'file-json' : 'json', 'file-jsonl' : 'jsonl'}
 
-class PumpiloConfigurationError(Exception):
+class DataCrafteronfigurationError(Exception):
     def __init(self, message):
         self.message = message
         super().__init__(self.message)
@@ -25,15 +27,15 @@ class BaseExtractor:
     def validate(self):
         """Number of validation rules to make sure that config is right"""
         if self.project is None:
-            raise PumpiloConfigurationError("Can't run extractor without project data. Please provide it")
+            raise DataCrafteronfigurationError("Can't run extractor without project data. Please provide it")
         if self.method == 'url' and 'url' not in self.config.keys():
-            raise PumpiloConfigurationError("An 'url' should be defined in config section for url method")
+            raise DataCrafteronfigurationError("An 'url' should be defined in config section for url method")
         if self.method == 'urlbypattern':
             if not ('data_prefix' in self.config.keys() and 'prefix' in self.config.keys()):
-                raise PumpiloConfigurationError("A 'prefix' and 'data_prefix' should be defined in config section for urlbypattern method")
+                raise DataCrafteronfigurationError("A 'prefix' and 'data_prefix' should be defined in config section for urlbypattern method")
 # Need to include type = 'api'
 #        if self.sourcetype not in FILEEXT_MAP.keys() :
-#            raise PumpiloConfigurationError("Source type in 'type' should be one of %s" % (','.join(FILEEXT_MAP.keys())))
+#            raise datacrafterConfigurationError("Source type in 'type' should be one of %s" % (','.join(FILEEXT_MAP.keys())))
 
 
     def run(self):
@@ -68,6 +70,12 @@ class BaseExtractor:
                     self.results = [{'filename': os.path.relpath(fullfilename), 'compressed': False, 'type' : 'file'}]
                 else:
                     logging.info('APIBackuper config file not found')
+        elif self.sourcetype == 'code':
+            self.script = self.config['script']
+            script = run_path(self.script)
+            self.__process_func = script['collect']
+            self.results = self.__process_func(self.config)
+
         status = 'fail' if len(self.results) == 0 else 'success'
         self.project.state.add('extractor', status=status, results=self.results)
 
