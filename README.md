@@ -12,11 +12,11 @@ Look at examples https://github.com/apicrafter/datacrafter-examples
 * Task chaining and data pipelines
 * Command-line first
 * Special features
-** automated extraction data from API
-** semantic types identification
-** automatic documentation generation
-** data discovery of data, formats and possible data transformation
-** packaging data into NoSQL and flat data formats
+    * automated extraction data from API
+    * semantic types identification
+    * automatic documentation generation
+    * data discovery of data, formats and possible data transformation
+    * packaging data into NoSQL and flat data formats
 
 
 # Base concepts
@@ -114,8 +114,8 @@ File targets could should have multiple storage support:
 
 ## Processors
 * Mappers - map data fields from one scheme to another
-** keymap - replaces key names (Done)
-** typemap - replaces data types (Done)
+    * keymap - replaces key names (Done)
+    * typemap - replaces data types (Done)
 * Custom code (Python scripts) - data manipulation with python code (Done)
 * Custom tools (command line) - data manipulation with command line tools (Work in progress)
 * Enrichers - data and metadata enrichment (Planned)
