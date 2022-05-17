@@ -67,17 +67,13 @@ extras_require = {
 }
 
 
-def long_description():
-    with codecs.open('README.rst', encoding='utf8') as f:
-        return f.read()
-
 
 setup(
     name='datacrafter',
     version=datacrafter.__version__,
     description=datacrafter.__doc__.strip(),
-    long_description=long_description(),
-    long_description_content_type='text/x-rst',
+    long_description=read('README.md'),
+    long_description_content_type='text/markdown',
     url='https://github.com/apicrafter/datacrafter/',
     download_url='https://github.com/apicrafter/datacrafter/',
     packages=find_packages(exclude=('tests', 'tests.*')),
