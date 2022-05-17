@@ -1,0 +1,80 @@
+<!-- TODO: No need to pull in this whole t6hing for a burger. Fix it later. -->
+<script 
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+  crossorigin="anonymous">    
+</script>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+  $(".navbar-burger").click(function() {
+      $(".navbar-burger, .navbar-menu", $(this).closest('.navbar')).toggleClass("is-active");
+  });
+});
+</script>
+
+{% if page.url == "/search" %}
+  {% include algolia.html %}
+{% endif %}
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="content">
+      <div class="columns is-centered">
+      
+        <div class="column is-one-quarter has-text-centered">
+
+          <figure class="image is-128x128 is-inline-block mb-0">
+            <img src="/images/apicrafter-logo-stacked-padded.svg" alt="The Apicrafter Logo">
+          </figure>
+
+          <ul class="social-media-list">
+
+            <li class="is-inline">
+              <a href="https://github.com/apicrafter/datacrafter">
+                <span class="fab fa-github fa-lg"></span>
+              </a>
+            </li>
+
+            <li class="is-inline">
+              <a href="https://github.com/apicrafter">
+                <span class="fab fa-github fa-lg"></span>
+              </a>
+            </li>
+
+          </ul>
+        </div>
+              
+        <div class="column">
+          <h3>The Project</h3>
+          <ul>
+            <li><a href="">Our Mission</a></li>
+            <li><a href="">Our Vision</a></li>
+            <li><a href="">Roadmap</a></li>
+            <li><a href="">Strategy</a></li>
+          </ul>
+        </div>
+
+        <div class="column">
+          <h3>The Company</h3>
+          <ul>
+            <li><a href="">About Company</a></li>
+            <li><a href="">Our Values</li>
+          </ul>
+        </div>
+
+        <div class="column">
+          <h3>Community</h3>
+          <ul>
+            <li><a href="">Discord</a></li>
+            <li><a href="https://github.com/apicrafter">APICrafter</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+    
+  </div>
+
+</footer>

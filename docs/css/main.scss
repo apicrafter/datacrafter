@@ -1,0 +1,42 @@
+---
+# Only the main Sass file needs front matter (the dashes are enough)
+---
+@charset "utf-8";
+
+/* 
+ * Brand Colors
+ */
+
+$datacrafter-blue: #3438bf;
+$datacrafter-flame-red: #d9042b;
+$datacrafter-blue-2: #031d4d;
+$datacrafter-blue-3: #000e29;
+$datacrafter-ash: #2e2e33;
+$datacrafter-turqiose: #02a5a5;
+$datacrafter-jade: #b0e3c1;
+$datacrafter-moonstone: #fae6be;
+$datacrafter-steel: #62626e;
+$datacrafter-armor: #c0c0c4;
+$datacrafter-silver: #f1f1f2;
+$datacrafter-dragons-egg: #e8f0ff;
+$datacrafter-ice: #f5f7fa;
+$datacrafter-white: #ffffff;
+
+/* Bulma Variables */
+
+$primary: $datacrafter-blue;
+$yellow: $datacrafter-moonstone;
+$green: $datacrafter-jade;
+$grey-darker: $datacrafter-ash;
+$turquoise: $datacrafter-turqiose;
+$red: $datacrafter-flame-red;
+
+/* Bulma Timeline Variables */
+
+$timeline-marker-border: none;
+
+/* Import the needful after variables are set */
+
+@import 'node_modules/bulma/bulma';
+@import 'node_modules/bulma-timeline/dist/css/bulma-timeline';
+@import "syntax.css";

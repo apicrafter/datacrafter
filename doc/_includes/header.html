@@ -1,0 +1,47 @@
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KS47SNT"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+<nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+      <a class="navbar-item" href="https://meltano.com">
+          <img src="/images/Meltano-logo_meltano-logo-white-padded.svg" alt="The Meltano dragon logo with Meltano written in white" width="112" height="28">
+      </a>
+      <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+      </a>
+  </div>
+  <div id="navbarBasicExample" class="navbar-menu">
+      <div class="navbar-start">
+        <a class="navbar-item" href="{{ site.url }}"> Home </a>
+
+        {% if site.collections %}
+          {% assign collections = site.collections | sort: 'weight' %}
+          {% for collection in collections %}
+            {% if collection.label != "posts" %}
+              <a class="navbar-item" href="/{{ collection.label }}"> {{ collection.name }} </a>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+        
+        <div class="navbar-item has-dropdown is-hoverable">
+            <a class="navbar-link"> Get Help </a>
+            <div class="navbar-dropdown">
+                <a class="navbar-item" href="https://meltano.com/slack"> Slack Community </a>
+                <a class="navbar-item" href="https://meltano.com/slack"> Support </a>
+                <hr class="navbar-divider">
+                <a class="navbar-item" href="https://gitlab.com/meltano/meltano/issues/"> Report a Bug </a>
+            </div>
+        </div>
+
+      </div>
+      <div class="navbar-end">
+          <a href="/search" class="navbar-item"><i class="fas fa-search"></i></a>
+          <a href="https://gitlab.com/meltano/meltano" class="navbar-item"><i class="fab fa-gitlab"></i></a>
+          <a href="https://meltano.com/slack" class="navbar-item"><i class="fab fa-slack"></i></a>
+      </div>
+  </div>
+</nav>

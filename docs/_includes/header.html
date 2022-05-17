@@ -1,0 +1,42 @@
+
+<nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+      <a class="navbar-item" href="https://github.com/apicrafter">
+          <img src="/images/apicrafter-logo.svg" alt="The APICrafter logo" width="112" height="28">
+      </a>
+      <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+      </a>
+  </div>
+  <div id="navbarBasicExample" class="navbar-menu">
+      <div class="navbar-start">
+        <a class="navbar-item" href="{{ site.url }}"> Home </a>
+
+        {% if site.collections %}
+          {% assign collections = site.collections | sort: 'weight' %}
+          {% for collection in collections %}
+            {% if collection.label != "posts" %}
+              <a class="navbar-item" href="/{{ collection.label }}"> {{ collection.name }} </a>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+        
+        <div class="navbar-item has-dropdown is-hoverable">
+            <a class="navbar-link"> Get Help </a>
+            <div class="navbar-dropdown">
+                <a class="navbar-item" href=""> Discord Community </a>
+                <hr class="navbar-divider">
+                <a class="navbar-item" href="https://github.com/apicrafter/datacrafter/issues/"> Report a Bug </a>
+            </div>
+        </div>
+
+      </div>
+      <div class="navbar-end">
+          <a href="/search" class="navbar-item"><i class="fas fa-search"></i></a>
+          <a href="https://github.com/apicrafter/datacrafter" class="navbar-item"><i class="fab fa-github"></i></a>
+          <a href="" class="navbar-item"><i class="fab fa-discord"></i></a>
+      </div>
+  </div>
+</nav>
