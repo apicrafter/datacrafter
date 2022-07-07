@@ -1,5 +1,8 @@
-from csv import reader, DictReader
+from csv import DictReader
+
 from .base import BaseFileSource
+
+
 class CSVSource(BaseFileSource):
     def __init__(self, filename=None, stream=None, keys=None, delimiter=',', quotechar='"', encoding=None):
         super(CSVSource, self).__init__(filename, stream, binary=False, encoding=encoding)
@@ -12,12 +15,12 @@ class CSVSource(BaseFileSource):
     def reset(self):
         super(CSVSource, self).reset()
         if self.keys:
-            self.reader = DictReader(self.fobj, fieldnames=self.keys, delimiter=self.delimiter, quotechar=self.quotechar)
+            self.reader = DictReader(self.fobj, fieldnames=self.keys, delimiter=self.delimiter,
+                                     quotechar=self.quotechar)
         else:
             self.reader = DictReader(self.fobj, delimiter=self.delimiter, quotechar=self.quotechar)
-#            self.reader = reader(self.fobj, delimiter=self.delimiter, quotechar=self.quotechar)
+        #            self.reader = reader(self.fobj, delimiter=self.delimiter, quotechar=self.quotechar)
         self.pos = 0
-
 
     def id(self):
         return 'csv'

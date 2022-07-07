@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
-import click
 import logging
+
+import click
 
 from .cmds.project import Project
 
-#logging.getLogger().addHandler(logging.StreamHandler())
+# logging.getLogger().addHandler(logging.StreamHandler())
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.DEBUG)
+
 
 def enableVerbose():
     logging.basicConfig(
@@ -19,6 +21,7 @@ def enableVerbose():
 @click.group()
 def cli1():
     pass
+
 
 @cli1.command()
 @click.option('--verbose', '-v', count=True, help='Verbose output. Print additional info on command execution')
@@ -35,6 +38,7 @@ def run(verbose):
 def cli2():
     pass
 
+
 @cli2.command()
 @click.option('--verbose', '-v', count=True, help='Verbose output. Print additional info on command execution')
 def log(verbose):
@@ -43,9 +47,11 @@ def log(verbose):
         enableVerbose()
     pass
 
+
 @click.group()
 def cli3():
     pass
+
 
 @cli3.command()
 @click.option('--verbose', '-v', count=True, help='Verbose output. Print additional info on command execution')
@@ -55,9 +61,11 @@ def check(verbose):
         enableVerbose()
     pass
 
+
 @click.group()
 def cli4():
     pass
+
 
 @cli4.command()
 @click.option('--verbose', '-v', count=True, help='Verbose output. Print additional info on command execution')
@@ -67,9 +75,11 @@ def init(verbose):
         enableVerbose()
     pass
 
+
 @click.group()
 def cli5():
     pass
+
 
 @cli5.command()
 @click.option('--verbose', '-v', count=True, help='Verbose output. Print additional info on command execution')
@@ -81,9 +91,11 @@ def clean(verbose):
     project.clean()
     pass
 
+
 @click.group()
 def cli6():
     pass
+
 
 @cli6.command()
 @click.option('--verbose', '-v', count=True, help='Verbose output. Print additional info on command execution')
@@ -93,9 +105,11 @@ def ui(verbose):
         enableVerbose()
     pass
 
+
 @click.group()
 def cli7():
     pass
+
 
 @cli7.command()
 @click.option('--verbose', '-v', count=True, help='Verbose output. Print additional info on command execution')
@@ -105,9 +119,11 @@ def schema(verbose):
         enableVerbose()
     pass
 
+
 @click.group()
 def cli8():
     pass
+
 
 @cli8.command()
 @click.option('--verbose', '-v', count=True, help='Verbose output. Print additional info on command execution')
@@ -117,9 +133,11 @@ def builds(verbose):
         enableVerbose()
     pass
 
+
 @click.group()
 def cli9():
     pass
+
 
 @cli9.command()
 @click.option('--verbose', '-v', count=True, help='Verbose output. Print additional info on command execution')
@@ -129,9 +147,11 @@ def push(verbose):
         enableVerbose()
     pass
 
+
 @click.group()
 def cli10():
     pass
+
 
 @cli10.command()
 def version():
@@ -144,6 +164,7 @@ def version():
 def cli11():
     pass
 
+
 @cli11.command()
 @click.option('--verbose', '-v', count=True, help='Verbose output. Print additional info on command execution')
 def metrics(verbose):
@@ -152,9 +173,11 @@ def metrics(verbose):
         enableVerbose()
     pass
 
+
 @click.group()
 def cli12():
     pass
+
 
 @cli12.command()
 @click.option('--verbose', '-v', count=True, help='Verbose output. Print additional info on command execution')
@@ -165,9 +188,7 @@ def status(verbose):
     pass
 
 
-
 cli = click.CommandCollection(sources=[cli1, cli2, cli3, cli4, cli5, cli6, cli7, cli8, cli9, cli10, cli11, cli12])
 
-#if __name__ == '__main__':
+# if __name__ == '__main__':
 #    cli()
-

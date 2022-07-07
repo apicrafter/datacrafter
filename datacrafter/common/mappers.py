@@ -1,5 +1,6 @@
 import datetime
 import logging
+
 from ..common.common import get_dict_value, set_dict_value
 
 TYPE_DATE = 1
@@ -7,9 +8,9 @@ TYPE_INT = 2
 TYPE_FLOAT = 3
 
 DATETIME_PATTERNS = ['%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%d %H:%M:%S',
-                 '%Y-%m-%d %H:%M:%S%z',
-                 '%d.%m.%Y', '%d.%m.%Y %H:%M:%S', '%Y-%m-%d',
-                 '%Y%m%d']
+                     '%Y-%m-%d %H:%M:%S%z',
+                     '%d.%m.%Y', '%d.%m.%Y %H:%M:%S', '%Y-%m-%d',
+                     '%Y%m%d']
 
 DATE_PATTERNS = ['%Y-%m-%d',
                  '%d.%m.%Y'
@@ -20,6 +21,7 @@ date_handler = lambda obj: (
     if isinstance(obj, (datetime.datetime, datetime.date))
     else None
 )
+
 
 def map_keys(obj, keys, qd=None):
     """Maps object to the predefined schema from `keys`"""
@@ -39,7 +41,7 @@ def map_keys(obj, keys, qd=None):
             if rule['type'] == TYPE_INT:
                 result[newk] = int(obj[k])
             elif rule['type'] == TYPE_DATE:
-#                parts = obj[k].split('.')
+                #                parts = obj[k].split('.')
                 result[newk] = datefunc(obj[k])
             elif rule['type'] == TYPE_FLOAT:
                 result[newk] = float(obj[k])
@@ -55,7 +57,7 @@ def map_keys(obj, keys, qd=None):
                 items.append(o)
             result[newk] = items
         else:
-#            print(obj)
+            #            print(obj)
             result[newk] = obj[k]
     return result
 
@@ -63,7 +65,8 @@ def map_keys(obj, keys, qd=None):
 def convert_to_datetime(string):
     """Resource consuming but effective date time conversion"""
     try:
-        if len(string) == 0: return None
+        if len(string) == 0:
+            return None
         # Условие для случаев вида "20170001" или "20171200". Если валидный год, преобразовать в условную дату YYYY.01.01
         elif string[4:6] == '00' or string[6:] == '00':
             string = string[:4] + '0101'
@@ -74,14 +77,15 @@ def convert_to_datetime(string):
             return datetime.datetime.strptime(string, pat)
         except Exception as e:
             continue
-#    logging.debug('%s is not datetime' % (string))
+    #    logging.debug('%s is not datetime' % (string))
     return None
 
 
 def convert_to_date(string):
     """Resource consuming but effective date conversion"""
     try:
-        if len(string) == 0: return None
+        if len(string) == 0:
+            return None
         # Условие для случаев вида "20170001" или "20171200". Если валидный год, преобразовать в условную дату YYYY.01.01
         elif string[4:6] == '00' or string[6:] == '00':
             string = string[:4] + '0101'
@@ -92,7 +96,7 @@ def convert_to_date(string):
             return datetime.datetime.strptime(string, pat)
         except Exception as e:
             continue
-#    logging.debug('%s is not datetime' % (string))
+    #    logging.debug('%s is not datetime' % (string))
     return None
 
 
@@ -104,6 +108,7 @@ def convert_to_int(string):
     except Exception as e:
         logging.info(str(e))
 
+
 def convert_to_float(string):
     """String to float. #FIXME """
     if type(string) == type(u"") and len(string) == 0: return None
@@ -113,9 +118,10 @@ def convert_to_float(string):
     except Exception as e:
         logging.info(str(e))
 
+
 def convert_to_bool(string):
     """String to boolean. #FIXME """
-#    if len(string) == 0: return None
+    #    if len(string) == 0: return None
     if string == '0' or string.lower() == 'false':
         return False
     elif string == '1' or string.lower() == 'true':
@@ -124,11 +130,10 @@ def convert_to_bool(string):
         return string
 
 
-
-
-def map_document_fields(obj, bool_fields=[], date_fields=[], float_fields=[], int_fields=[],):
+def map_document_fields(obj, bool_fields=[], date_fields=[], float_fields=[], int_fields=[], ):
     """Convert object fields to the selected formats"""
-    FUN_FIELDS = [[bool_fields, convert_to_bool], [date_fields, convert_to_datetime], [int_fields, convert_to_int], [float_fields, convert_to_float]]
+    FUN_FIELDS = [[bool_fields, convert_to_bool], [date_fields, convert_to_datetime], [int_fields, convert_to_int],
+                  [float_fields, convert_to_float]]
     result = dict()
     for key in obj.keys():
         value = obj[key]
@@ -142,16 +147,18 @@ def map_document_fields(obj, bool_fields=[], date_fields=[], float_fields=[], in
                 else:
                     value = func(value)
         if found:
-#            logging.info(u'%s %s' % (key, str(value)))
+            #            logging.info(u'%s %s' % (key, str(value)))
             result[key] = value
             continue
         if type(value) is dict and len(value):
-            result[key] = map_document_fields(value, bool_fields=bool_fields, int_fields=int_fields, float_fields=float_fields, date_fields=date_fields)
+            result[key] = map_document_fields(value, bool_fields=bool_fields, int_fields=int_fields,
+                                              float_fields=float_fields, date_fields=date_fields)
         elif type(value) is list and len(value):
             result[key] = list()
             for item in value:
                 if type(item) is dict:
-                    result[key].append(map_document_fields(item, bool_fields=bool_fields, int_fields=int_fields, float_fields=float_fields, date_fields=date_fields))
+                    result[key].append(map_document_fields(item, bool_fields=bool_fields, int_fields=int_fields,
+                                                           float_fields=float_fields, date_fields=date_fields))
                 else:
                     result[key].append(item)
         else:
@@ -159,8 +166,9 @@ def map_document_fields(obj, bool_fields=[], date_fields=[], float_fields=[], in
     return result
 
 
+TYPEMAP = {'bool': convert_to_bool, 'datetime': convert_to_datetime, 'date': convert_to_date, "int": convert_to_int,
+           "float": convert_to_float}
 
-TYPEMAP = {'bool' : convert_to_bool, 'datetime' : convert_to_datetime, 'date' : convert_to_date, "int" : convert_to_int, "float": convert_to_float}
 
 def schema_to_func(schema):
     output = {}
@@ -171,7 +179,7 @@ def schema_to_func(schema):
 
 def simple_typemap_object(obj, schema={}):
     """Convert object fields to the selected formats using data schema
-    #FIXME: This is very ineffection conversion function that try to detect data formats without knowledge. It could be much much faster
+    #FIXME: This is very ineffective conversion function that try to detect data formats without knowledge. It could be much much faster
     """
     schema_func = schema_to_func(schema)
     result = obj.copy()

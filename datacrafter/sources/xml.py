@@ -1,7 +1,7 @@
-from csv import reader
+import lxml.etree as etree
+
 from .base import BaseFileSource
 from ..common.converters import etree_to_dict
-import lxml.etree as etree
 
 
 class XMLSource(BaseFileSource):

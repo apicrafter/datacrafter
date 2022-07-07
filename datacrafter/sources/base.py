@@ -1,10 +1,11 @@
-
 SOURCE_TYPE_STREAM = 10
 SOURCE_TYPE_FILE = 20
 DEFAULT_BULK_NUMBER = 100
 
+
 class BaseSource:
     """Base data source class"""
+
     def __init__(self):
         pass
 
@@ -42,6 +43,7 @@ class BaseSource:
 
 class BaseFileSource(BaseSource):
     """Basic file source"""
+
     def __init__(self, filename, stream, binary=False, encoding='utf8', noopen=False):
         self.filename = filename
         self.noopen = noopen
@@ -64,9 +66,7 @@ class BaseFileSource(BaseSource):
         if not self.noopen:
             self.fobj.seek(0)
 
-
     def close(self):
-        if self.sourcetype == SOURCE_TYPE_FILE:
+        if self.stype == SOURCE_TYPE_FILE:
             if self.fobj:
                 self.fobj.close()
-

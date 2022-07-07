@@ -1,5 +1,8 @@
 from json import loads
+
 from .base import BaseFileSource
+
+
 class JSONLinesSource(BaseFileSource):
     def __init__(self, filename=None, stream=None):
         super(JSONLinesSource, self).__init__(filename, stream, binary=False)

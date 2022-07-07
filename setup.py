@@ -1,7 +1,6 @@
 # This is purely the result of trial and error.
 
 import sys
-import codecs
 
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
@@ -45,7 +44,12 @@ install_requires = [
     'qddate>=0.1.1',
     'tabulate>=0.8.7',
     'validators>=0.18.1',
-    'xlrd>=1.2.0'
+    'xlrd>=1.2.0',
+    'apibackuper',
+    'requests',
+    'bs4',
+    'lxml',
+    'pyyaml'
 ]
 
 
@@ -72,7 +76,7 @@ setup(
     name='datacrafter',
     version=datacrafter.__version__,
     description=datacrafter.__doc__.strip(),
-    long_description=read('README.md'),
+    long_description=open('README.md', 'r', encoding='utf8').read(),
     long_description_content_type='text/markdown',
     url='https://github.com/apicrafter/datacrafter/',
     download_url='https://github.com/apicrafter/datacrafter/',

@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-import yaml
-import logging
-import json
 import errno
+import logging
+
+import yaml
+
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
@@ -15,11 +16,13 @@ from ..common.state import ProjectState
 from ..sources import get_source_from_file
 from ..destinations import get_destination_from_config
 
+
 def load_config(filename):
     f = open(filename, 'r', encoding='utf8')
     data = yaml.load(f, Loader=Loader)
     f.close()
     return data
+
 
 class Project:
     def __init__(self, project_path=None):
@@ -28,10 +31,9 @@ class Project:
         self.project_path = os.getcwd() if project_path is None else project_path
         self.project_filename = os.path.join(self.project_path, 'datacrafter.yml')
         self.__read_project_file(self.project_filename)
-        self.logfile = os.path.join(self.project_path, 'log', 'datacrafter.log')
-        self.state_file = os.path.join(self.project_path, 'state.json')
 
         dpath = os.path.join(self.project_path)
+
         self.current = os.path.join(dpath, "current")
         self.output = os.path.join(dpath, "output")
         self.temp = os.path.join(dpath, "temp")
@@ -40,8 +42,12 @@ class Project:
         self.storage = os.path.join(dpath, "storage")
         self.docpath = os.path.join(dpath, "docs")
 
-        self.enable_logging()
+        os.makedirs(self.logp, exist_ok=True)
+        self.logfile = os.path.join(self.logp, 'datacrafter.log')
+        self.state_file = os.path.join(self.project_path, 'state.json')
 
+
+        self.enable_logging()
 
     def enable_logging(self):
         """Enable logging to file and stderr"""
@@ -84,7 +90,6 @@ class Project:
                 logging.info("Directory %s can't be created" % (k))
                 pass
 
-
     def log(self):
         # FIXME! Logging outside system logging
         pass
@@ -110,19 +115,19 @@ class Project:
                 os.remove(f)
         pass
 
-
     def validate(self):
         """Validates project file #FIXME returns always True for now"""
         return True, None
-#        raise NotImplemented
+
+    #        raise NotImplemented
 
     def prepare(self):
         """Prepares everything"""
         logging.info('Preparing project extract, processor and destination')
         self.extractor = BaseExtractor(self)
-        logging.info('Extractor class %s'  %(str(self.extractor.__class__)))
+        logging.info('Extractor class %s' % (str(self.extractor.__class__)))
         self.processor = CommonProcessor(self)
-        logging.info('Processor class %s'  %(str(self.processor.__class__)))
+        logging.info('Processor class %s' % (str(self.processor.__class__)))
         self.destination = None
         if 'destination' in self.project.keys():
             self.destination = get_destination_from_config(self.output, self.project['destination'])
@@ -159,14 +164,13 @@ class Project:
         """Executed on end of the project. Not implemented yet"""
         logging.info('Finished project: %s' % (self.project['project-name']))
 
-
     def run(self, pre_clean=False, init=True, proceed=True):
         """Execute project"""
         isvalid, report = self.validate()
         logging.info('Started project: %s' % (self.project['project-name']))
         if not isvalid:
             print('Invalid configuration. See more info below')
-            print('%s' % (report))          #FIXME
+            print('%s' % (report))  # FIXME
         else:
             if init:
                 self.init()
@@ -177,6 +181,3 @@ class Project:
             self.collect(proceed)
             self.process()
             self.finish()
-
-
-

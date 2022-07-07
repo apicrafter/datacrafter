@@ -1,12 +1,15 @@
 # -*- coding: utf8 -*-
-from ..common.mappers import map_keys, simple_typemap_object
-from runpy import run_path
 import logging
+from runpy import run_path
+
+from ..common.mappers import map_keys, simple_typemap_object
 
 DEBUG_ITERNUM = 5000
 
+
 class AbstractStep:
     """Abstract step class"""
+
     def __init__(self):
         pass
 
@@ -17,6 +20,7 @@ class AbstractStep:
 
 class KeymapFieldsStep(AbstractStep):
     """Keymapping step with fields rename"""
+
     def __init__(self, keys, qd=None):
         self.keys = keys
         self.qd = qd
@@ -29,6 +33,7 @@ class KeymapFieldsStep(AbstractStep):
 
 class KeymapPositionStep(AbstractStep):
     """Keymapping step with positions"""
+
     def __init__(self, keys):
         self.keys = keys
         super().__init__()
@@ -40,6 +45,7 @@ class KeymapPositionStep(AbstractStep):
 
 class TypemapStep(AbstractStep):
     """Typemap step"""
+
     def __init__(self, schema):
         self.schema = schema
         super().__init__()
@@ -51,6 +57,7 @@ class TypemapStep(AbstractStep):
 
 class CustomCodeStep(AbstractStep):
     """Custom code step"""
+
     def __init__(self, customtype="script", code=None):
         self.customtype = customtype
         self.code = code
@@ -65,6 +72,7 @@ class CustomCodeStep(AbstractStep):
 
 class DataPipeline:
     """Data pipeline to process single records"""
+
     def __init__(self, steps=None):
         if steps is None:
             steps = []
@@ -85,9 +93,11 @@ class DataPipeline:
 
 class BaseProcessor:
     """Abstract class of the data processor"""
+
     def __init__(self, project):
         self.project = project
-#        self.destination = destination
+
+    #        self.destination = destination
 
     def process_record(self, record):
         """Processes single record of data"""
@@ -97,7 +107,8 @@ class BaseProcessor:
         """Execute data processing"""
         return NotImplemented
 
-DEFAULT_CONFIG_PARAMS = {'autoid': {'type': bool, 'default' : True},
+
+DEFAULT_CONFIG_PARAMS = {'autoid': {'type': bool, 'default': True},
                          'skip_lines': {'type': int, 'default': None},
                          'autotype': {'type': bool, 'default': False},
                          }
@@ -107,13 +118,14 @@ DEFAILT_CONFIG = {'config': {}}
 
 class CommonProcessor(BaseProcessor):
     """Implementation of common operations"""
-    def __init__(self, project):#, destination):
+
+    def __init__(self, project):  # , destination):
         self.project = project
         if 'processor' in self.project.project.keys():
             self.params = self.project.project['processor']
         else:
             self.params = DEFAILT_CONFIG.copy()
-#        self.destination = destination
+        #        self.destination = destination
         self.__set_default_config()
         self.pipeline = DataPipeline()
 
@@ -123,17 +135,17 @@ class CommonProcessor(BaseProcessor):
             elif self.params['keymap']['type'] == 'names':
                 keymap_schema = {}
                 for key in self.params['keymap']['fields']:
-                    keymap_schema[key] = {'name' : self.params['keymap']['fields'][key]}
+                    keymap_schema[key] = {'name': self.params['keymap']['fields'][key]}
                 self.pipeline.add_step(KeymapFieldsStep(keys=keymap_schema))
-            logging.info('Added keymapping step with schema %s' % str(keymap_schema))
-
+                logging.info('Added keymapping step with schema %s' % str(keymap_schema))
 
         if 'typemap' in self.params.keys():
             self.pipeline.add_step(TypemapStep(self.params['typemap']))
             logging.info('Added type mapping step with schema %s' % str(self.params['typemap']))
 
         if 'custom' in self.params.keys():
-            self.pipeline.add_step(CustomCodeStep(customtype=self.params['custom']['type'], code=self.params['custom']['code']))
+            self.pipeline.add_step(
+                CustomCodeStep(customtype=self.params['custom']['type'], code=self.params['custom']['code']))
             logging.info('Added custom code script step %s' % str(self.params['custom']['code']))
 
     def __set_default_config(self):
@@ -144,7 +156,6 @@ class CommonProcessor(BaseProcessor):
             else:
                 value = self.params['config'][param]
             setattr(self, param, value)
-
 
     def process_record(self, record):
         """Processes single record of data"""
@@ -177,4 +188,3 @@ class CommonProcessor(BaseProcessor):
                 destination.write(p_rec)
         status = 'success'
 #        self.project.state.add('processor', status=status, results=self.results)
-

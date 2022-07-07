@@ -1,31 +1,35 @@
 import gzip
-import os.path
-from zipfile import ZipFile, ZIP_DEFLATED
-from lzma import LZMAFile
-from bz2 import BZ2File
 import io
 import logging
+import os.path
+from bz2 import BZ2File
+from lzma import LZMAFile
+from zipfile import ZipFile, ZIP_DEFLATED
 
 SUPPORTED_FILE_TYPES = ['xls', 'xlsx', 'csv', 'xml', 'json', 'jsonl', 'yaml', 'tsv', 'sql', 'bson', 'parquet']
 COMPRESSED_FILE_TYPES = ['gz', 'xz', 'zip', 'lz4', '7z', 'bz2']
 BINARY_FILE_TYPES = ['xls', 'xlsx', 'bson', 'parquet'] + COMPRESSED_FILE_TYPES
 
-SUPPORTED_COMPRESSION = {'gz': True, 'zip': True, 'xz': False, '7z': False,  'lz4': False, 'bz2' : True}
+SUPPORTED_COMPRESSION = {'gz': True, 'zip': True, 'xz': False, '7z': False, 'lz4': False, 'bz2': True}
 
 try:
     import lz4
+
     SUPPORTED_COMPRESSION['lz4'] = True
 except ImportError:
     pass
 
 try:
     import py7zr
+
     SUPPORTED_COMPRESSION['7z'] = True
 except ImportError:
     pass
 
+
 class BaseDestination:
     """Base destination class"""
+
     def __init__(self):
         pass
 
@@ -52,6 +56,7 @@ class BaseDestination:
 
 class BaseFileDestination(BaseDestination):
     """Basic file destination"""
+
     def __init__(self, filename, binary=False, encoding='utf8', compression=None, ftype=None):
         self.binary = binary
         self.ftype = ftype
@@ -80,11 +85,13 @@ class BaseFileDestination(BaseDestination):
                         self.fobj = io.TextIOWrapper(LZMAFile(filename, 'w'), encoding=encoding)
                 elif ext == 'zip':
                     self.archiveobj = ZipFile(filename, mode='w', compression=ZIP_DEFLATED)
-                    filename = filename.rsplit('.', 2)[0] + '.' + self.ftype if self.ftype else filename.rsplit('.', 2)[0] + '.' + self.id()
+                    filename = filename.rsplit('.', 2)[0] + '.' + self.ftype if self.ftype else filename.rsplit('.', 2)[
+                                                                                                    0] + '.' + self.id()
                     if binary:
                         self.fobj = self.archiveobj.open(filename, 'w')
                     else:
-                        self.fobj = io.TextIOWrapper(self.archiveobj.open(os.path.basename(filename), 'w'), encoding=encoding)
+                        self.fobj = io.TextIOWrapper(self.archiveobj.open(os.path.basename(filename), 'w'),
+                                                     encoding=encoding)
                 else:
                     raise NotImplemented
             else:

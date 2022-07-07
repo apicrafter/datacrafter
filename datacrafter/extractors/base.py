@@ -1,19 +1,25 @@
-from ..common.collect import get_file, get_file_by_name, get_file_by_pattern
-from apibackuper.cmds.project import ProjectBuilder
 import logging
-import shutil
 import os
+import shutil
 from runpy import run_path
 
-FILEEXT_MAP = {'file-zip' : 'zip', 'file-xls' : 'xls', 'file-csv' : 'csv', 'file-xml' : 'xml', 'file-json' : 'json', 'file-jsonl' : 'jsonl'}
+from apibackuper.cmds.project import ProjectBuilder
+
+from ..common.collect import get_file, get_file_by_pattern
+
+FILEEXT_MAP = {'file-zip': 'zip', 'file-xls': 'xls', 'file-csv': 'csv', 'file-xml': 'xml', 'file-json': 'json',
+               'file-jsonl': 'jsonl', 'file-xlsx' : 'xlsx'}
+
 
 class DataCrafteronfigurationError(Exception):
     def __init(self, message):
         self.message = message
         super().__init__(self.message)
 
+
 class BaseExtractor:
     """This is proof-of-concept extractor class. Should be plugin based in future. #TODO Make me pluginnable"""
+
     def __init__(self, project=None):
         self.project = project
         self.project_config = project.project
@@ -23,7 +29,6 @@ class BaseExtractor:
         self.force = project.project['extractor']['force'] if 'force' in project.project['extractor'].keys() else True
         self.config = project.project['extractor']['config'] if 'config' in project.project['extractor'].keys() else {}
 
-
     def validate(self):
         """Number of validation rules to make sure that config is right"""
         if self.project is None:
@@ -32,11 +37,12 @@ class BaseExtractor:
             raise DataCrafteronfigurationError("An 'url' should be defined in config section for url method")
         if self.method == 'urlbypattern':
             if not ('data_prefix' in self.config.keys() and 'prefix' in self.config.keys()):
-                raise DataCrafteronfigurationError("A 'prefix' and 'data_prefix' should be defined in config section for urlbypattern method")
-# Need to include type = 'api'
-#        if self.sourcetype not in FILEEXT_MAP.keys() :
-#            raise datacrafterConfigurationError("Source type in 'type' should be one of %s" % (','.join(FILEEXT_MAP.keys())))
+                raise DataCrafteronfigurationError(
+                    "A 'prefix' and 'data_prefix' should be defined in config section for urlbypattern method")
 
+    # Need to include type = 'api'
+    #        if self.sourcetype not in FILEEXT_MAP.keys() :
+    #            raise datacrafterConfigurationError("Source type in 'type' should be one of %s" % (','.join(FILEEXT_MAP.keys())))
 
     def run(self):
         """Run extractor process"""
@@ -51,7 +57,8 @@ class BaseExtractor:
                 result = get_file(self.config['url'], fullpathname)
             elif self.method == 'urlbypattern':
                 logging.info('Extract file by url pattern %s' % (self.config['prefix']))
-                result = get_file_by_pattern(self.project.current, self.project.temp, self.config['prefix'], self.config['data_prefix'], fullpathname, file_type=file_ext, force=True)
+                result = get_file_by_pattern(self.project.current, self.project.temp, self.config['prefix'],
+                                             self.config['data_prefix'], fullpathname, file_type=file_ext, force=True)
             if result:
                 self.results = [{'filename': os.path.relpath(fullpathname), 'compressed': False, 'type': 'file'}]
         elif self.sourcetype == 'api':
@@ -67,7 +74,7 @@ class BaseExtractor:
                         builder.run(mode=self.mode)
                     fullfilename = os.path.join(self.project.current, 'data.jsonl')
                     builder.export(format='jsonl', filename=fullfilename)
-                    self.results = [{'filename': os.path.relpath(fullfilename), 'compressed': False, 'type' : 'file'}]
+                    self.results = [{'filename': os.path.relpath(fullfilename), 'compressed': False, 'type': 'file'}]
                 else:
                     logging.info('APIBackuper config file not found')
         elif self.sourcetype == 'code':
@@ -78,4 +85,3 @@ class BaseExtractor:
 
         status = 'fail' if len(self.results) == 0 else 'success'
         self.project.state.add('extractor', status=status, results=self.results)
-

@@ -1,6 +1,7 @@
-from ..common.converters import etree_to_dict
 import lxml.etree as etree
+
 from .zipped import ZIPSourceWrapper
+from ..common.converters import etree_to_dict
 
 
 class ZIPXMLSource(ZIPSourceWrapper):
@@ -37,4 +38,3 @@ class ZIPXMLSource(ZIPSourceWrapper):
         self.filepos += 1
         self.globalpos += 1
         return row[self.tagname]
-

@@ -7,11 +7,12 @@ from urllib import parse
 import requests
 from bs4 import BeautifulSoup
 
-
-REQUEST_HEADER = {'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Mobile Safari/537.36'}
+REQUEST_HEADER = {
+    'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Mobile Safari/537.36'}
 DEFAULT_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:68.0) Gecko/20100101 Firefox/68.0'
 DEFAULT_CHUNK_SIZE = 4096
 DEFAULT_TIMEOUT = 300
+
 
 def get_file(url, filename, aria2=False, aria2path=None, timeout=DEFAULT_TIMEOUT):
     logging.info('Retrieving %s from %s' % (filename, url))
@@ -43,7 +44,9 @@ def get_file(url, filename, aria2=False, aria2path=None, timeout=DEFAULT_TIMEOUT
 def is_absolute_url(url):
     return bool(parse.urlparse(url).netloc)
 
-def get_file_by_pattern(current_path, temp_path, url, url_data_prefix, filename, file_type=None, aria2=False, aria2path=None, force=True, timeout=DEFAULT_TIMEOUT):
+
+def get_file_by_pattern(current_path, temp_path, url, url_data_prefix, filename, file_type=None, aria2=False,
+                        aria2path=None, force=True, timeout=DEFAULT_TIMEOUT):
     """Collects specific file by it's url pattern and saves it as filename"""
     shift = len(file_type) + 1
     user_agent = DEFAULT_USER_AGENT
@@ -74,7 +77,8 @@ def get_file_by_pattern(current_path, temp_path, url, url_data_prefix, filename,
         return filename
 
 
-def get_file_by_name(current_path, temp_path, url, name=None, prefix=None, file_prefix=None, file_type=None, aria2=False, aria2path=None, force=True):
+def get_file_by_name(current_path, temp_path, url, name=None, prefix=None, file_prefix=None, file_type=None,
+                     aria2=False, aria2path=None, force=True):
     """Collects specific file by it's name"""
     user_agent = DEFAULT_USER_AGENT
     session = requests.Session()
@@ -101,7 +105,7 @@ def get_file_by_name(current_path, temp_path, url, name=None, prefix=None, file_
         logging.info('Downloading %s to %s' % (data_url, filename))
         fd, temp_filepath = tempfile.mkstemp()
         os.close(fd)
-#        temp_filepath = os.path.join(temp_path, filename)
+        #        temp_filepath = os.path.join(temp_path, filename)
         current_filepath = os.path.join(current_path, "%s_current.%s" % (file_prefix, file_type))
         logging.info('Temp %s' % (temp_filepath))
         if not os.path.exists(temp_filepath) or force:

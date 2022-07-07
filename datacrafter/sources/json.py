@@ -1,6 +1,8 @@
-from json import loads
-from .base import BaseFileSource
 import json
+
+from .base import BaseFileSource
+
+
 class JSONSource(BaseFileSource):
     def __init__(self, filename=None, stream=None, tagname=None):
         super(JSONSource, self).__init__(filename, stream, binary=False)
@@ -8,7 +10,7 @@ class JSONSource(BaseFileSource):
         self.pos = 0
         self.data = json.load(self.fobj)
         if tagname:
-            self.data = self.data['tagname']
+            self.data = self.data[tagname]
         self.total = len(self.data)
         pass
 

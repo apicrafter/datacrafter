@@ -1,5 +1,7 @@
 from openpyxl import load_workbook
+
 from .base import BaseFileSource
+
 
 class XLSXSource(BaseFileSource):
     def __init__(self, filename=None, stream=None, keys=None, page=0, start_line=1):
@@ -17,6 +19,13 @@ class XLSXSource(BaseFileSource):
         self.sheet = self.workbook.active
         self.pos = self.start_line
         self.iter = self.sheet.iter_rows()
+        if self.pos > 1:
+            self.skip(self.pos - 1)
+
+    def skip(self, num):
+        while num > 0:
+            num -= 1
+            o = next(self.iter)
 
     def id(self):
         return 'xlsx'
@@ -24,13 +33,12 @@ class XLSXSource(BaseFileSource):
     def is_flat(self):
         return True
 
-
     def read(self):
         """Read single XLSX record"""
         row = next(self.iter)
         tmp = list()
         for cell in row:
-            tmp.append(cell.value)
+            tmp.append(str(cell.value))
         result = dict(zip(self.keys, tmp))
         self.pos += 1
         return result
@@ -42,7 +50,7 @@ class XLSXSource(BaseFileSource):
             row = next(self.iter)
             tmp = list()
             for cell in row:
-                tmp.append(cell.value)
+                tmp.append(str(cell.value))
             result = dict(zip(self.keys, tmp))
             chunk.append(result)
             self.pos += 1

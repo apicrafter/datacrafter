@@ -1,12 +1,12 @@
-from .base import BaseSource
-from ..common.converters import etree_to_dict
 from zipfile import ZipFile
+
+from .base import BaseSource
 
 
 class ZIPSourceWrapper(BaseSource):
     def __init__(self, filename, binary=False):
         super(ZIPSourceWrapper, self).__init__()
-        self.fobj =  ZipFile(filename, mode='r')
+        self.fobj = ZipFile(filename, mode='r')
         self.filenames = self.fobj.namelist()
         self.filenum = 0
         self.filepos = 0
@@ -17,15 +17,14 @@ class ZIPSourceWrapper(BaseSource):
 
     def close(self):
         if self.current_file:
-            self.current_file.close
+            self.current_file.close()
             self.current_file = None
         self.fobj.close()
-
 
     def iterfile(self):
         if self.current_file:
             self.current_file.close()
-        if self.filenum < len(self.filenames)-1:
+        if self.filenum < len(self.filenames) - 1:
             self.filenum += 1
             filename = self.filenames[self.filenum]
             self.current_file = self.fobj.open(filename, mode=self.mode)
@@ -46,13 +45,11 @@ class ZIPSourceWrapper(BaseSource):
             else:
                 raise StopIteration
 
-
     def __iter__(self):
         self.filenum = 0
         filename = self.filenames[self.filenum]
         self.current_file = self.fobj.open(filename, mode=self.mode)
         return self
-
 
     def read_single(self):
         """Not implemented single record read"""

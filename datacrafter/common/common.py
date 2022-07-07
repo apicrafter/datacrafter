@@ -1,4 +1,3 @@
-
 def get_dict_value(adict, key, prefix=None):
     if prefix is None:
         prefix = key.split('.')
@@ -6,6 +5,7 @@ def get_dict_value(adict, key, prefix=None):
         return adict[prefix[0]]
     else:
         return get_dict_value(adict[prefix[0]], key, prefix=prefix[1:])
+
 
 def get_dict_value_deep(adict, key, prefix=None, as_array=False, splitter='.'):
     """Used to get value from hierarhic dicts in python with params with dots as splitter"""
@@ -45,6 +45,7 @@ def get_dict_value_deep(adict, key, prefix=None, as_array=False, splitter='.'):
                 return get_dict_value_deep(adict[0][prefix[0]], key, prefix=prefix[1:], as_array=as_array)
         return None
 
+
 def set_dict_value(adict, key, value, prefix=None, splitter='.', build_path=True):
     """Used to set value in hierarhic dicts in python with params with dots as splitter"""
     if prefix is None:
@@ -70,6 +71,7 @@ def set_dict_value(adict, key, value, prefix=None, splitter='.', build_path=True
                 adict[prefix[0]] = set_dict_value(adict[0][prefix[0]], key, value, prefix=prefix[1:])
                 return adict
         return None
+
 
 def update_dict_values(left_dict, params_dict):
     """Used to update values of hierarhic dicts in python with params with dots as splitter"""

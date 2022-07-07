@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../metacrafter" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../metacrafter-registry" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/experiments/flyteconsole" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../metacrafter-rules" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../../datacoon/undatum" vcs="Git" />
   </component>
 </project>

@@ -1,6 +1,9 @@
 from json import dumps
-from ..common.mappers import date_handler
+
 from .base import BaseFileDestination
+from ..common.mappers import date_handler
+
+
 class JSONLinesDestination(BaseFileDestination):
     def __init__(self, filename, compression=None):
         super(JSONLinesDestination, self).__init__(filename, binary=False, compression=compression)

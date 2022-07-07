@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-from json import load, dumps
 import os
+from json import load, dumps
+
 
 class ProjectState:
     """Keeps project state"""
+
     def __init__(self, filename=None, reset=True, autosave=True):
         self.data = {}
         self.filename = filename
@@ -14,11 +16,9 @@ class ProjectState:
             self.stages = []
             self.last_stage = None
 
-
-
     def add(self, name, status="success", results={}):
         """Add stage"""
-        self.stages.append({'name' : name, 'status' : status, 'results' : results})
+        self.stages.append({'name': name, 'status': status, 'results': results})
         self.last_stage = name
         if self.autosave:
             self.save(self.filename)

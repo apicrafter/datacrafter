@@ -7,5 +7,6 @@
     <orderEntry type="module" module-name="datum" />
     <orderEntry type="module" module-name="metacrafter-registry" />
     <orderEntry type="module" module-name="metacrafter" />
+    <orderEntry type="module" module-name="metacrafter-rules" />
   </component>
 </module>
