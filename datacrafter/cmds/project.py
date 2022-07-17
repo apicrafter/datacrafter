@@ -38,12 +38,10 @@ class Project:
         self.output = os.path.join(dpath, "output")
         self.temp = os.path.join(dpath, "temp")
         self.builds = os.path.join(dpath, "builds")
-        self.logp = os.path.join(dpath, "log")
         self.storage = os.path.join(dpath, "storage")
         self.docpath = os.path.join(dpath, "docs")
 
-        os.makedirs(self.logp, exist_ok=True)
-        self.logfile = os.path.join(self.logp, 'datacrafter.log')
+        self.logfile = os.path.join(dpath, 'datacrafter.log')
         self.state_file = os.path.join(self.project_path, 'state.json')
 
 
@@ -81,7 +79,6 @@ class Project:
             self.output,
             self.temp,
             self.builds,
-            self.logp,
             self.storage,
         ]:
             try:
