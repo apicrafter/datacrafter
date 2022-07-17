@@ -103,3 +103,20 @@ class BaseFileDestination(BaseDestination):
             self.fobj.close()
         if hasattr(self, 'archiveobj'):
             self.archiveobj.close()
+
+
+class BaseDBDestination(BaseDestination):
+    """Basic database destination"""
+
+    def __init__(self, connstr, dbname, tablename, username=None, password=None):
+        self.connstr = connstr
+        self.dbname = dbname
+        self.tablename = tablename
+        self.username = username
+        self.password = password
+
+    def close(self):
+        """Should close db connection"""
+        raise NotImplemented
+
+

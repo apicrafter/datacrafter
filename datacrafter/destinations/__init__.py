@@ -3,18 +3,43 @@ import os
 from .bsonf import BSONDestination
 from .csv import CSVDestination
 from .jsonl import JSONLinesDestination
+from .mongo import MongoDBDestination
+from .arango import ArangoDBDestination
 
 FILEEXT_MAP = {'file-jsonl': 'jsonl', 'file-bson': 'bson', 'file-csv': 'csv'}
-DESTINATION_TYPES = ['file-jsonl', 'file-bson', 'file-csv']
+DESTINATION_TYPES_DB = ['mongodb', 'arangodb']
+DESTINATION_TYPES_FILES = ['file-jsonl', 'file-bson', 'file-csv']
 DEFAULT_DELIMITER = ','
 DEFAULT_QUOTECHAR = '"'
 
 
+def get_option_value(options, key, default):
+    """Return option value or default"""
+    return options[key] if key in options.keys() else default
+
+
 def get_destination_from_config(dirpath, options):
-    fileprefix = options['fileprefix']
+    """Temporary function to create destination from config. Should be replaced in the future"""
     if 'type' in options.keys():
-        if options['type'] not in DESTINATION_TYPES:
-            raise NotImplemented
+        if options['type'] in DESTINATION_TYPES_DB:
+            if options['type'] == 'mongodb':
+                return MongoDBDestination(connstr=get_option_value(options, 'connstr', 'mongodb://localhost:27017'),
+                                          dbname=get_option_value(options, 'dbname', 'default'),
+                                          tablename=get_option_value(options, 'tablename', 'default'),
+                                          username=get_option_value(options, 'username', None),
+                                          password=get_option_value(options, 'password', None),
+                                          )
+
+            elif options['type'] == 'arangodb':
+                return ArangoDBDestination(connstr=get_option_value(options, 'connstr', 'http://localhost:8529'),
+                                          dbname=get_option_value(options, 'dbname', 'default'),
+                                          tablename=get_option_value(options, 'tablename', 'default'),
+                                          username=get_option_value(options, 'username', None),
+                                          password=get_option_value(options, 'password', None),
+                                          )
+        if options['type'] not in DESTINATION_TYPES_FILES:
+            raise NotImplemented            
+        fileprefix = options['fileprefix']
         if options['type'] == 'file-jsonl':
             ext = FILEEXT_MAP[options['type']]
             filename = os.path.join(dirpath, fileprefix + '.' + ext)
