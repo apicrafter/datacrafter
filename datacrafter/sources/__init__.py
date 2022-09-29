@@ -80,4 +80,4 @@ def get_source_from_file(filename, stype=None, options=None):
         logging.debug('Use JSON lines source with filename %s' % (filename))
         return JSONLinesSource(filename=filename)
     else:
-        raise NotImplemented
+        raise NotImplementedError

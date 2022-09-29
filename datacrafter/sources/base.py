@@ -11,19 +11,19 @@ class BaseSource:
 
     def reset(self):
         """Reset iterator"""
-        raise NotImplemented
+        raise NotImplementedError
 
     def id(self):
         """Identifier of selected destination"""
-        raise NotImplemented
+        raise NotImplementedError
 
     def read(self, skip_empty=True):
         """Read single record"""
-        raise NotImplemented
+        raise NotImplementedError
 
     def read_bulk(self, num=DEFAULT_BULK_NUMBER):
         """Read multiple records"""
-        raise NotImplemented
+        raise NotImplementedError
 
     def is_flat(self):
         """Is source flat flat. Default: False"""

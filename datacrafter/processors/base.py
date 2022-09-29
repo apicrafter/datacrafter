@@ -15,7 +15,7 @@ class AbstractStep:
 
     def apply(self, record):
         """Shouldn't be called in this class"""
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class KeymapFieldsStep(AbstractStep):
@@ -101,11 +101,11 @@ class BaseProcessor:
 
     def process_record(self, record):
         """Processes single record of data"""
-        return NotImplemented
+        return NotImplementedError
 
     def run(self, source, destination=None):
         """Execute data processing"""
-        return NotImplemented
+        return NotImplementedError
 
 
 DEFAULT_CONFIG_PARAMS = {'autoid': {'type': bool, 'default': True},

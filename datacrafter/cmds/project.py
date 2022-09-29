@@ -138,7 +138,7 @@ class Project:
 
     def validate(self):
         """Validates project file #FIXME returns always True for now"""
-    #        raise NotImplemented
+    #        raise 
         return True, None
 
     def prepare(self):

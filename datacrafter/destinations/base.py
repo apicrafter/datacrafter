@@ -34,15 +34,15 @@ class BaseDestination:
 
     def id(self):
         """Identifier of selected destination"""
-        raise NotImplemented
+        raise NotImplementedError
 
     def write(self, rec):
         """Write single record"""
-        raise NotImplemented
+        raise NotImplementedError
 
     def write_bulk(self, records):
         """Write multiple records"""
-        raise NotImplemented
+        raise NotImplementedError
 
     def is_flat(self):
         """Is destination flat. Default: False"""
@@ -92,9 +92,9 @@ class BaseFileDestination(BaseDestination):
                         self.fobj = io.TextIOWrapper(self.archiveobj.open(os.path.basename(filename), 'w'),
                                                      encoding=encoding)
                 else:
-                    raise NotImplemented
+                    raise NotImplementedError
             else:
-                raise NotImplemented
+                raise NotImplementedError
 
     def close(self):
         """Close file and archive container if ZIP or 7z file formats"""
@@ -116,7 +116,7 @@ class BaseDBDestination(BaseDestination):
 
     def close(self):
         """Should close db connection"""
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class BaseSearchDestination(BaseDestination):
@@ -131,4 +131,4 @@ class BaseSearchDestination(BaseDestination):
 
     def close(self):
         """Should close client connection"""
-        raise NotImplemented
+        raise NotImplementedError

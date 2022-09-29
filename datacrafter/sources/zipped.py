@@ -53,7 +53,7 @@ class ZIPSourceWrapper(BaseSource):
 
     def read_single(self):
         """Not implemented single record read"""
-        raise NotImplemented
+        raise NotImplementedError
 
     def read_bulk(self, num):
         """Read bulk records"""

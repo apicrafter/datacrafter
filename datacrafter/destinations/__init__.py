@@ -48,7 +48,7 @@ def get_destination_from_config(dirpath, options):
                                           password=get_option_value(options, 'password', None),
                                           )
         if options['type'] not in DESTINATION_TYPES_FILES:
-            raise NotImplemented            
+            raise NotImplementedError            
         fileprefix = options['fileprefix']
         if options['type'] == 'file-jsonl':
             ext = FILEEXT_MAP[options['type']]
@@ -76,4 +76,4 @@ def get_destination_from_config(dirpath, options):
                                       'quotechar'] if 'quotechar' in options.keys() else DEFAULT_QUOTECHAR,
                                   compression=options['compress'] if 'compress' in options.keys() else None)
         else:
-            raise NotImplemented
+            raise NotImplementedError
