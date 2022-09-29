@@ -5,8 +5,10 @@ from .csv import CSVDestination
 from .jsonl import JSONLinesDestination
 from .mongo import MongoDBDestination
 from .arango import ArangoDBDestination
+from .meilisearch import MeilisearchDestination
 
 FILEEXT_MAP = {'file-jsonl': 'jsonl', 'file-bson': 'bson', 'file-csv': 'csv'}
+DESTINATION_TYPES_SEARCH = ['meilisearch', ]
 DESTINATION_TYPES_DB = ['mongodb', 'arangodb']
 DESTINATION_TYPES_FILES = ['file-jsonl', 'file-bson', 'file-csv']
 DEFAULT_DELIMITER = ','
@@ -21,7 +23,15 @@ def get_option_value(options, key, default):
 def get_destination_from_config(dirpath, options):
     """Temporary function to create destination from config. Should be replaced in the future"""
     if 'type' in options.keys():
-        if options['type'] in DESTINATION_TYPES_DB:
+        if options['type'] in DESTINATION_TYPES_SEARCH:
+            if options['type'] == 'meilisearch':
+                return MeilisearchDestination(connstr=get_option_value(options, 'connstr', 'https://127.0.0.1:7700'),
+                                          indexname=get_option_value(options, 'indexname', ''),
+                                          token=get_option_value(options, 'token', ''),
+                                          reset=get_option_value(options, 'reset', False),
+                                          incremental=get_option_value(options, 'incremental', True),
+                                          )
+        elif options['type'] in DESTINATION_TYPES_DB:
             if options['type'] == 'mongodb':
                 return MongoDBDestination(connstr=get_option_value(options, 'connstr', 'mongodb://localhost:27017'),
                                           dbname=get_option_value(options, 'dbname', 'default'),

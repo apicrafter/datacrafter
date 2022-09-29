@@ -2,19 +2,12 @@ import datetime
 import logging
 
 from ..common.common import get_dict_value, set_dict_value
+from ..constants import DATE_PATTERNS_SHORT, DATETIME_PATTERNS
 
 TYPE_DATE = 1
 TYPE_INT = 2
 TYPE_FLOAT = 3
 
-DATETIME_PATTERNS = ['%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%d %H:%M:%S',
-                     '%Y-%m-%d %H:%M:%S%z',
-                     '%d.%m.%Y', '%d.%m.%Y %H:%M:%S', '%Y-%m-%d',
-                     '%Y%m%d']
-
-DATE_PATTERNS = ['%Y-%m-%d',
-                 '%d.%m.%Y'
-                 '%Y%m%d']
 
 date_handler = lambda obj: (
     obj.isoformat()
@@ -81,6 +74,8 @@ def convert_to_datetime(string):
     return None
 
 
+# FIXME: This is very slow simplified date processing without known date pattern for each record
+# It should be rewritten to speed up dates processing
 def convert_to_date(string):
     """Resource consuming but effective date conversion"""
     try:
@@ -91,7 +86,7 @@ def convert_to_date(string):
             string = string[:4] + '0101'
     except TypeError:
         pass
-    for pat in DATE_PATTERNS:
+    for pat in DATE_PATTERNS_SHORT:
         try:
             return datetime.datetime.strptime(string, pat)
         except Exception as e:

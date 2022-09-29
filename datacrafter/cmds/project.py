@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+import os
+import glob
 import errno
 import logging
+import uuid
 
 import yaml
 
@@ -8,8 +11,9 @@ try:
     from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
     from yaml import Loader, Dumper
-import os
-import glob
+
+# Project imports
+from ..constants import DEFAULT_BULK_RECORDS
 from ..extractors.base import BaseExtractor
 from ..processors.base import CommonProcessor
 from ..common.state import ProjectState
@@ -30,7 +34,8 @@ class Project:
         self.project = None
         self.project_path = os.getcwd() if project_path is None else project_path
         self.project_filename = os.path.join(self.project_path, 'datacrafter.yml')
-        self.__read_project_file(self.project_filename)
+        if os.path.exists(self.project_filename):
+            self.__read_project_file(self.project_filename)
 
         dpath = os.path.join(self.project_path)
 
@@ -45,21 +50,20 @@ class Project:
         self.state_file = os.path.join(self.project_path, 'state.json')
 
 
-        self.enable_logging()
-
-    def enable_logging(self):
+    def enable_logging(self, console=True, tofile=False):
         """Enable logging to file and stderr"""
         logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
         rootLogger = logging.getLogger()
+        if tofile:
+            fileHandler = logging.FileHandler("{0}".format(self.logfile))
+            fileHandler.setLevel(logging.DEBUG)
+            fileHandler.setFormatter(logFormatter)
+            rootLogger.addHandler(fileHandler)
 
-        fileHandler = logging.FileHandler("{0}".format(self.logfile))
-        fileHandler.setLevel(logging.DEBUG)
-        fileHandler.setFormatter(logFormatter)
-        rootLogger.addHandler(fileHandler)
-
-        consoleHandler = logging.StreamHandler()
-        consoleHandler.setFormatter(logFormatter)
-        rootLogger.addHandler(consoleHandler)
+        if console:
+            consoleHandler = logging.StreamHandler()
+            consoleHandler.setFormatter(logFormatter)
+            rootLogger.addHandler(consoleHandler)
 
     def __read_project_file(self, filename):
         """Reads project file content"""
@@ -70,10 +74,27 @@ class Project:
             raise FileNotFoundError(
                 errno.ENOENT, os.strerror(errno.ENOENT), self.project_filename)
 
-    def init(self):
+    def init(self, name=None, force=False):
         """Initialize project. Creates required dirs if they do not exists"""
+        self.enable_logging(console=True, tofile=False)
         logging.info('Initialize project. Create required directories')
-        # Create dirs if not exists
+        if os.path.exists(self.project_filename) and not force:
+            print('Project file %s already exists. No force flag set. Skip' % (self.project_filename))
+        else:
+            self.__create_dirs()
+            self.__create_project_yaml(name)
+
+
+    def __create_project_yaml(self, name=None, version="1", id=None):
+        """Create project YAML file"""
+        project = {'version' : version if version else None , 'project-name' : name if name else 'dummy', 'project-id' : id if id else uuid.uuid4().hex}
+        f = open(self.project_filename, 'w', encoding='utf8')
+        yaml.dump(project, f)
+        f.close()
+        logging.info('Project file created')
+
+    def __create_dirs(self):
+        """Create all project directories"""
         for k in [
             self.current,
             self.output,
@@ -83,9 +104,12 @@ class Project:
         ]:
             try:
                 os.makedirs(k)
+                logging.debug("Directory %s created" % (k))
             except Exception as e:
-                logging.info("Directory %s can't be created" % (k))
+                logging.debug("Directory %s can't be created" % (k))
                 pass
+
+
 
     def log(self):
         # FIXME! Logging outside system logging
@@ -114,9 +138,8 @@ class Project:
 
     def validate(self):
         """Validates project file #FIXME returns always True for now"""
-        return True, None
-
     #        raise NotImplemented
+        return True, None
 
     def prepare(self):
         """Prepares everything"""
@@ -153,7 +176,7 @@ class Project:
                     if 'type' in options.keys():
                         stype = options['type']
             logging.info('Processing ' + os.path.basename(r['filename']))
-            self.processor.run(get_source_from_file(r['filename'], stype=stype, options=options), self.destination)
+            self.processor.run(get_source_from_file(r['filename'], stype=stype, options=options), self.destination, buffer_size=DEFAULT_BULK_RECORDS)
             logging.info('Processing complete ' + os.path.basename(r['filename']))
         pass
 
@@ -163,14 +186,19 @@ class Project:
 
     def run(self, pre_clean=False, init=True, proceed=True):
         """Execute project"""
-        isvalid, report = self.validate()
+        self.enable_logging(console=True, tofile=True)
+        if self.project is None:
+            print('Project file not found or not loaded')
+            return
+        isvalid, report = self.validate()        
         logging.info('Started project: %s' % (self.project['project-name']))
         if not isvalid:
             print('Invalid configuration. See more info below')
-            print('%s' % (report))  # FIXME
+            print('%s' % (report))  #FIXME Just dump error
+            return 
         else:
             if init:
-                self.init()
+                self.__create_dirs()
             if pre_clean:
                 self.clean()
             self.state = ProjectState(filename=self.state_file, reset=pre_clean, autosave=True)

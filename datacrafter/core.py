@@ -25,11 +25,12 @@ def cli1():
 
 @cli1.command()
 @click.option('--verbose', '-v', count=True, help='Verbose output. Print additional info on command execution')
-def run(verbose):
+@click.option('--path', '-p', help='Project path. If not set, current directory used', default=None)
+def run(verbose, path):
     """Execute data pipeline"""
     if verbose:
         enableVerbose()
-    project = Project()
+    project = Project(path) if path else Project()
     project.run()
     pass
 
@@ -69,10 +70,15 @@ def cli4():
 
 @cli4.command()
 @click.option('--verbose', '-v', count=True, help='Verbose output. Print additional info on command execution')
-def init(verbose):
-    """Initialize project (not yet)"""
+@click.option('--path', '-p', help='Project path. If not set, current directory used', default=None)
+@click.option('--name', '-n', help='Project name. If not set, dummy name used', default=None)
+def init(verbose, path, name):
+    """Initialize project"""
     if verbose:
         enableVerbose()
+    project = Project(path) if path else Project()
+    project.init(name)
+    
     pass
 
 
@@ -83,11 +89,12 @@ def cli5():
 
 @cli5.command()
 @click.option('--verbose', '-v', count=True, help='Verbose output. Print additional info on command execution')
-def clean(verbose):
+@click.option('--path', '-p', help='Project path. If not set, current directory used', default=None)
+def clean(verbose, path):
     """Remove latest temporary files"""
     if verbose:
         enableVerbose()
-    project = Project()
+    project = Project(path) if path else Project()
     project.clean()
     pass
 

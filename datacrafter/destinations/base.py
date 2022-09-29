@@ -14,7 +14,6 @@ SUPPORTED_COMPRESSION = {'gz': True, 'zip': True, 'xz': False, '7z': False, 'lz4
 
 try:
     import lz4
-
     SUPPORTED_COMPRESSION['lz4'] = True
 except ImportError:
     pass
@@ -120,3 +119,16 @@ class BaseDBDestination(BaseDestination):
         raise NotImplemented
 
 
+class BaseSearchDestination(BaseDestination):
+    """Basic search index destination"""
+    def __init__(self, connstr, indexname, token, reset=False, incremental=False):
+        """Init basic search indexedr destination"""
+        self.connstr = connstr
+        self.indexname = indexname
+        self.token = token
+        self.reset = reset
+        self.incremental = incremental
+
+    def close(self):
+        """Should close client connection"""
+        raise NotImplemented

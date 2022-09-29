@@ -1,5 +1,4 @@
-from arango import ArangoClient
-
+# -*- coding: utf8 -*-
 from .base import BaseDBDestination
 
 
@@ -7,6 +6,7 @@ class ArangoDBDestination(BaseDBDestination):
     """ArangoDB Destination"""
     def __init__(self, connstr, dbname, tablename, username=None, password=None):
         """Init destination"""
+        from arango import ArangoClient
         super(ArangoDBDestination, self).__init__(connstr, dbname, tablename, username, password)
         self.client = ArangoClient(connstr)
         self.db = self.client.db(dbname, username, password)
