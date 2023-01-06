@@ -17,3 +17,6 @@ qddate>=0.1.1
 validators>=0.18.1
 xlrd>=1.2.0
 apibackuper
+certifi>=2022.12.7 # not directly required, pinned by Snyk to avoid a vulnerability
+pygments>=2.7.4 # not directly required, pinned by Snyk to avoid a vulnerability
+setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability
