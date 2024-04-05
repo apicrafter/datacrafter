@@ -8,8 +8,8 @@ gem "jekyll", "4.2.1"
 gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 
 gem "webrick", "~> 1.7"
-gem "html-proofer", "~> 3.19"
-gem 'jekyll-toc'
+gem "html-proofer", "~> 3.19", ">= 3.19.4"
+gem 'jekyll-toc', '>= 0.18.0'
 gem "jekyll-sitemap", "~> 1.4"
 gem 'jekyll-redirect-from', "~>0.16"
 
