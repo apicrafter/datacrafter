@@ -8,3 +8,4 @@ qddate>=0.1.1
 validators>=0.18.1
 xlrd>=1.2.0
 apibackuper
+requests>=2.32.4 # not directly required, pinned by Snyk to avoid a vulnerability
