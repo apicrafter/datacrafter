@@ -34,8 +34,7 @@ tests_require = [
 
 install_requires = [
     'chardet>=3.0.4',
-    'click>=8.0.3',
-    'dictquery>=0.4.0',
+    'typer>=0.9.0',
     'jsonlines>=1.2.0',
     'openpyxl>=3.0.5',
     'orjson>=3.6.6',
@@ -43,13 +42,15 @@ install_requires = [
     'pymongo>=3.11.0',
     'qddate>=0.1.1',
     'tabulate>=0.8.7',
+    'tqdm>=4.64.0',
     'validators>=0.18.1',
     'xlrd>=1.2.0',
+    'requests>=2.28.0',
+    'beautifulsoup4>=4.11.0',
+    'lxml>=4.9.0',
+    'dictquery>=0.4.0',
+    'pyyaml>=6.0',
     'apibackuper',
-    'requests',
-    'bs4',
-    'lxml',
-    'pyyaml'
 ]
 
 

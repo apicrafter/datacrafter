@@ -12,13 +12,13 @@ def get_dict_value_deep(adict, key, prefix=None, as_array=False, splitter='.'):
     if prefix is None:
         prefix = key.split(splitter)
     if len(prefix) == 1:
-        if type(adict) == type({}):
+        if isinstance(adict, dict):
             if not prefix[0] in adict.keys():
                 return None
             if as_array:
                 return [adict[prefix[0]], ]
             return adict[prefix[0]]
-        elif type(adict) == type([]):
+        elif isinstance(adict, list):
             if as_array:
                 result = []
                 for v in adict:
@@ -30,10 +30,10 @@ def get_dict_value_deep(adict, key, prefix=None, as_array=False, splitter='.'):
                     return adict[0][prefix[0]]
         return None
     else:
-        if type(adict) == type({}):
+        if isinstance(adict, dict):
             if prefix[0] in adict.keys():
                 return get_dict_value_deep(adict[prefix[0]], key, prefix=prefix[1:], as_array=as_array)
-        elif type(adict) == type([]):
+        elif isinstance(adict, list):
             if as_array:
                 result = []
                 for v in adict:
@@ -51,16 +51,16 @@ def set_dict_value(adict, key, value, prefix=None, splitter='.', build_path=True
     if prefix is None:
         prefix = key.split(splitter)
     if len(prefix) == 1:
-        if type(adict) == type({}):
+        if isinstance(adict, dict):
             adict[prefix[0]] = value
         return adict
     else:
-        if type(adict) == type({}):
+        if isinstance(adict, dict):
             if build_path and not prefix[0] in adict.keys():
                 adict[prefix[0]] = {}
             adict[prefix[0]] = set_dict_value(adict[prefix[0]], key, value, prefix=prefix[1:])
             return adict
-        elif type(adict) == type([]):
+        elif isinstance(adict, list):
             result = []
             for v in adict:
                 res = set_dict_value(v[prefix[0]], key, value, prefix=prefix[1:])

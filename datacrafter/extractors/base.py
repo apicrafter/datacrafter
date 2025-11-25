@@ -11,8 +11,8 @@ FILEEXT_MAP = {'file-zip': 'zip', 'file-xls': 'xls', 'file-csv': 'csv', 'file-xm
                'file-jsonl': 'jsonl', 'file-xlsx' : 'xlsx'}
 
 
-class DataCrafteronfigurationError(Exception):
-    def __init(self, message):
+class DataCrafterConfigurationError(Exception):
+    def __init__(self, message):
         self.message = message
         super().__init__(self.message)
 
@@ -31,14 +31,25 @@ class BaseExtractor:
 
     def validate(self):
         """Number of validation rules to make sure that config is right"""
+        errors = []
         if self.project is None:
-            raise DataCrafteronfigurationError("Can't run extractor without project data. Please provide it")
+            errors.append("Can't run extractor without project data. Please provide it")
         if self.method == 'url' and 'url' not in self.config.keys():
-            raise DataCrafteronfigurationError("An 'url' should be defined in config section for url method")
+            errors.append("An 'url' should be defined in config section for url method. "
+                         f"Available config keys: {list(self.config.keys())}")
         if self.method == 'urlbypattern':
-            if not ('data_prefix' in self.config.keys() and 'prefix' in self.config.keys()):
-                raise DataCrafteronfigurationError(
-                    "A 'prefix' and 'data_prefix' should be defined in config section for urlbypattern method")
+            missing = []
+            if 'data_prefix' not in self.config.keys():
+                missing.append('data_prefix')
+            if 'prefix' not in self.config.keys():
+                missing.append('prefix')
+            if missing:
+                errors.append(f"Missing required config keys for urlbypattern method: {', '.join(missing)}. "
+                             f"Available config keys: {list(self.config.keys())}")
+        
+        if errors:
+            error_msg = "Extractor configuration errors:\n  - " + "\n  - ".join(errors)
+            raise DataCrafterConfigurationError(error_msg)
 
     # Need to include type = 'api'
     #        if self.sourcetype not in FILEEXT_MAP.keys() :
@@ -72,11 +83,17 @@ class BaseExtractor:
                     builder = ProjectBuilder(self.project.current)
                     if not os.path.exists(os.path.join(builder.storagedir, 'storage.zip')) or self.force:
                         builder.run(mode=self.mode)
+                        if 'follow' in self.config.keys() and self.config['follow'] is True:
+                            logging.debug('Follow key found in configuration. Running follow')
+                            builder.follow(mode='continue')
+                        else:
+                            logging.debug('Follow key not found in configuration or set to False. Not running follow')
+  
                     fullfilename = os.path.join(self.project.current, 'data.jsonl')
                     builder.export(format='jsonl', filename=fullfilename)
                     self.results = [{'filename': os.path.relpath(fullfilename), 'compressed': False, 'type': 'file'}]
                 else:
-                    logging.info('APIBackuper config file not found')
+                    logging.info('APIBackuper config file not found')                    
         elif self.sourcetype == 'code':
             self.script = self.config['script']
             script = run_path(self.script)

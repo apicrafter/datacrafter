@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 from json import load, dumps
+import logging
 
 
 class ProjectState:
@@ -25,9 +26,8 @@ class ProjectState:
 
     def load(self, filename):
         """Load"""
-        f = open(filename, 'r', encoding='utf8')
-        self.data = load(f)
-        f.close()
+        with open(filename, 'r', encoding='utf8') as f:
+            self.data = load(f)
         self.stages = self.data['stages']
         self.last_stage = self.stages[-1]['name']
         pass
@@ -36,7 +36,9 @@ class ProjectState:
         if not filename:
             filename = self.filename
         if filename:
-            f = open(filename, 'w', encoding='utf8')
-            self.data['stages'] = self.stages
-            f.write(dumps(self.data, indent=4))
-            f.close()
+            with open(filename, 'w', encoding='utf8') as f:
+                self.data['stages'] = self.stages
+                f.write(dumps(self.data, indent=4))
+            logging.debug('Saved current state')
+        else:
+            logging.debug('State not saved, filename not provided')

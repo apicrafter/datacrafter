@@ -18,5 +18,6 @@ class JSONLinesDestination(BaseFileDestination):
 
     def write_bulk(self, records):
         """Write bulk JSON lines records"""
-        for record in records:
-            self.fobj.write(dumps(record, ensure_ascii=False, default=date_handler) + '\n')
+        lines = [dumps(record, ensure_ascii=False, default=date_handler) + '\n' 
+                 for record in records]
+        self.fobj.writelines(lines)

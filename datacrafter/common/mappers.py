@@ -27,7 +27,7 @@ def map_keys(obj, keys, qd=None):
     for k in obj.keys():
         k1 = k.lstrip('@').lstrip('#')
         if k1 not in keys.keys():
-            logging.info(u'Unknown key %s' % (k))
+            logging.info(f'Unknown key {k}')
         rule = keys[k1]
         newk = rule['name']
         if 'type' in rule.keys():
@@ -38,12 +38,12 @@ def map_keys(obj, keys, qd=None):
                 result[newk] = datefunc(obj[k])
             elif rule['type'] == TYPE_FLOAT:
                 result[newk] = float(obj[k])
-        elif type(obj[k]) == type({}):
+        elif isinstance(obj[k], dict):
             result[newk] = map_keys(obj[k], keys, qd=qd)
-        elif type(obj[k]) == type([]):
+        elif isinstance(obj[k], list):
             items = []
             for item in obj[k]:
-                if type(item) == type({}):
+                if isinstance(item, dict):
                     o = map_keys(item, keys, qd=qd)
                 else:
                     o = item
@@ -68,7 +68,7 @@ def convert_to_datetime(string):
     for pat in DATETIME_PATTERNS:
         try:
             return datetime.datetime.strptime(string, pat)
-        except Exception as e:
+        except (ValueError, TypeError):
             continue
     #    logging.debug('%s is not datetime' % (string))
     return None
@@ -89,7 +89,7 @@ def convert_to_date(string):
     for pat in DATE_PATTERNS_SHORT:
         try:
             return datetime.datetime.strptime(string, pat)
-        except Exception as e:
+        except (ValueError, TypeError):
             continue
     #    logging.debug('%s is not datetime' % (string))
     return None
@@ -100,18 +100,22 @@ def convert_to_int(string):
     if len(string) == 0: return None
     try:
         return int(string)
-    except Exception as e:
-        logging.info(str(e))
+    except (ValueError, TypeError) as e:
+        logging.info(f'Failed to convert to int: {e}')
+        return None
 
 
 def convert_to_float(string):
     """String to float. #FIXME """
-    if type(string) == type(u"") and len(string) == 0: return None
-    if not string: return None
+    if isinstance(string, str) and len(string) == 0:
+        return None
+    if not string:
+        return None
     try:
         return float(string)
-    except Exception as e:
-        logging.info(str(e))
+    except (ValueError, TypeError) as e:
+        logging.info(f'Failed to convert to float: {e}')
+        return None
 
 
 def convert_to_bool(string):
@@ -137,7 +141,7 @@ def map_document_fields(obj, bool_fields=[], date_fields=[], float_fields=[], in
         for fields, func in FUN_FIELDS:
             if key in fields:
                 found = True
-                if type(value) == type([]):
+                if isinstance(value, list):
                     value = list(map(func, value))
                 else:
                     value = func(value)
@@ -145,13 +149,13 @@ def map_document_fields(obj, bool_fields=[], date_fields=[], float_fields=[], in
             #            logging.info(u'%s %s' % (key, str(value)))
             result[key] = value
             continue
-        if type(value) is dict and len(value):
+        if isinstance(value, dict) and len(value):
             result[key] = map_document_fields(value, bool_fields=bool_fields, int_fields=int_fields,
                                               float_fields=float_fields, date_fields=date_fields)
-        elif type(value) is list and len(value):
+        elif isinstance(value, list) and len(value):
             result[key] = list()
             for item in value:
-                if type(item) is dict:
+                if isinstance(item, dict):
                     result[key].append(map_document_fields(item, bool_fields=bool_fields, int_fields=int_fields,
                                                            float_fields=float_fields, date_fields=date_fields))
                 else:

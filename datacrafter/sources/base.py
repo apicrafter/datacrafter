@@ -67,6 +67,24 @@ class BaseFileSource(BaseSource):
             self.fobj.seek(0)
 
     def close(self):
+        """Close the file object if it's a file source"""
         if self.stype == SOURCE_TYPE_FILE:
             if self.fobj:
-                self.fobj.close()
+                try:
+                    if hasattr(self.fobj, 'closed') and not self.fobj.closed:
+                        self.fobj.close()
+                    elif not hasattr(self.fobj, 'closed'):
+                        # Some file-like objects don't have 'closed' attribute
+                        self.fobj.close()
+                except (AttributeError, OSError, IOError):
+                    # File may already be closed or not closeable
+                    pass
+
+    def __enter__(self):
+        """Context manager entry"""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - ensures file is closed"""
+        self.close()
+        return False

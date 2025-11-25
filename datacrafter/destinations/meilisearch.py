@@ -15,7 +15,7 @@ class MeilisearchDestination(BaseSearchDestination):
         self.incremental = incremental
         self.docid = 0
         if reset:
-            logging.debug('Pruning all documents from index %s' % (self.indexname))
+            logging.debug(f'Pruning all documents from index {self.indexname}')
             self.sindex.delete_all_documents()
         pass
 

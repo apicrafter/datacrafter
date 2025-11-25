@@ -23,3 +23,13 @@ DEFAULT_OPTIONS = {'encoding': 'utf8',
                    }
 
 DEFAULT_BULK_RECORDS = 250
+
+# Error handling strategies
+ERROR_STRATEGY_SKIP = 'skip'  # Skip failed records and continue
+ERROR_STRATEGY_FAIL = 'fail'  # Stop processing on first error
+ERROR_STRATEGY_RETRY = 'retry'  # Retry failed records
+
+# Retry configuration
+DEFAULT_MAX_RETRIES = 3
+DEFAULT_RETRY_DELAY = 1.0  # seconds
+DEFAULT_RETRY_BACKOFF = 2.0  # exponential backoff multiplier
