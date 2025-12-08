@@ -250,7 +250,7 @@ processor:
 destination:
   type: "file-jsonl"           # file-jsonl, file-csv, file-bson, mongodb, etc.
   fileprefix: "output"
-  compress: "gz"               # Optional: gz, bz2, xz, zip
+  compress: "gz"               # Optional: gz, bz2, xz, zip, zst
 ```
 
 ## Examples
