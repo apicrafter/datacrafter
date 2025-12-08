@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2024-12-19
+
 ### Added
 - Comprehensive documentation updates
 - Configuration validation command (`datacrafter config validate`)
@@ -17,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Status command to check pipeline execution state
 - Log command to view execution logs
 - Check command for configuration and environment validation
+- **Zstandard (zst) compression support** for sources and destinations
+- Support for both `compress` and `compression` configuration keys for backward compatibility
+- Compression examples and test coverage
 
 ### Fixed
 - Dependency management: Synchronized dependencies between `setup.py` and `requirements.txt`
@@ -25,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Created `DEPENDENCIES.md` documentation
 - Improved logging configuration (default to INFO level)
 - Better error messages with actionable suggestions
+- Compression configuration now supports both `compress` and `compression` keys
 
 ### Changed
 - Default logging level changed from DEBUG to INFO
@@ -38,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added configuration examples
 - Created DEPENDENCIES.md for dependency management
 - Improved project documentation structure
+- Added compression examples demonstrating zst support
 
 ## [1.0.2] - 2022-05-15
 

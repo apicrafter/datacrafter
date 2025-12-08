@@ -241,8 +241,10 @@ destination:
 ```
 
 Filename produced as `fileprefix + ext` where `ext` defined by type.
-File could be compressed with `xz`, `gz`, `bz2`, `zip` file types.
+File could be compressed with `xz`, `gz`, `bz2`, `zip`, `zst` file types.
 Right now only `local` storage supported
+
+**Note:** Both `compress` and `compression` keys are supported in configuration for backward compatibility.
 
 
 # Run ETL pipeline
