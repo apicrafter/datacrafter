@@ -1,18 +1,19 @@
+"""JSON source module."""
 import json
 
 from .base import BaseFileSource
 
 
 class JSONSource(BaseFileSource):
+    """JSON source implementation."""
     def __init__(self, filename=None, stream=None, tagname=None):
-        super(JSONSource, self).__init__(filename, stream, binary=False)
+        super().__init__(filename, stream, binary=False)
         self.tagname = tagname
         self.pos = 0
         self.data = json.load(self.fobj)
         if tagname:
             self.data = self.data[tagname]
         self.total = len(self.data)
-        pass
 
     def id(self):
         return 'json'
@@ -29,6 +30,6 @@ class JSONSource(BaseFileSource):
     def read_bulk(self, num):
         """Read bulk JSON records"""
         chunk = []
-        for n in range(0, num):
+        for _ in range(0, num):
             chunk.append(self.read())
         return chunk

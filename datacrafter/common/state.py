@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Project state management module."""
 import os
 from json import load, dumps
 import logging
@@ -17,8 +18,10 @@ class ProjectState:
             self.stages = []
             self.last_stage = None
 
-    def add(self, name, status="success", results={}):
+    def add(self, name, status="success", results=None):
         """Add stage"""
+        if results is None:
+            results = {}
         self.stages.append({'name': name, 'status': status, 'results': results})
         self.last_stage = name
         if self.autosave:
@@ -33,6 +36,7 @@ class ProjectState:
         pass
 
     def save(self, filename=None):
+        """Save project state to file."""
         if not filename:
             filename = self.filename
         if filename:

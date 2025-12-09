@@ -44,6 +44,18 @@ class BaseSource:
 class BaseFileSource(BaseSource):
     """Basic file source"""
 
+    def id(self):
+        """Identifier of selected source - must be overridden"""
+        raise NotImplementedError
+
+    def read(self, skip_empty=True):
+        """Read single record - must be overridden"""
+        raise NotImplementedError
+
+    def read_bulk(self, num=DEFAULT_BULK_NUMBER):
+        """Read multiple records - must be overridden"""
+        raise NotImplementedError
+
     def __init__(self, filename, stream, binary=False, encoding='utf8', noopen=False):
         self.filename = filename
         self.noopen = noopen
@@ -64,7 +76,13 @@ class BaseFileSource(BaseSource):
 
     def reset(self):
         if not self.noopen:
-            self.fobj.seek(0)
+            # Check if the file object is seekable before attempting to seek
+            if hasattr(self.fobj, 'seekable') and not self.fobj.seekable():
+                # Stream is not seekable (e.g., compressed files)
+                # Cannot reset, just continue from current position
+                pass
+            else:
+                self.fobj.seek(0)
 
     def close(self):
         """Close the file object if it's a file source"""

@@ -1,3 +1,4 @@
+"""JSON Lines destination module."""
 from json import dumps
 
 from .base import BaseFileDestination
@@ -5,9 +6,9 @@ from ..common.mappers import date_handler
 
 
 class JSONLinesDestination(BaseFileDestination):
+    """JSON Lines destination implementation."""
     def __init__(self, filename, compression=None):
-        super(JSONLinesDestination, self).__init__(filename, binary=False, compression=compression)
-        pass
+        super().__init__(filename, binary=False, compression=compression)
 
     def id(self):
         return 'jsonl'
@@ -18,6 +19,6 @@ class JSONLinesDestination(BaseFileDestination):
 
     def write_bulk(self, records):
         """Write bulk JSON lines records"""
-        lines = [dumps(record, ensure_ascii=False, default=date_handler) + '\n' 
+        lines = [dumps(record, ensure_ascii=False, default=date_handler) + '\n'
                  for record in records]
         self.fobj.writelines(lines)

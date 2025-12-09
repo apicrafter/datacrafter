@@ -9,6 +9,7 @@ pytest-httpbin>=0.0.6
 docutils
 wheel
 pycodestyle
+pylint>=4.0.0
 twine
 pip-audit>=2.6.0
 

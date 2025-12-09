@@ -1,12 +1,23 @@
-from bson import BSON
+"""BSON file destination module."""
+try:
+    from bson import BSON
+    HAS_BSON = True
+except ImportError:
+    HAS_BSON = False
+    BSON = None
 
 from .base import BaseFileDestination
 
 
 class BSONDestination(BaseFileDestination):
+    """BSON file destination implementation."""
     def __init__(self, filename, compression=None):
-        super(BSONDestination, self).__init__(filename, binary=True, compression=compression)
-        pass
+        if not HAS_BSON:
+            raise ImportError(
+                "bson is required for BSONDestination. "
+                "Install it with: pip install pymongo"
+            )
+        super().__init__(filename, binary=True, compression=compression)
 
     def id(self):
         return 'bson'

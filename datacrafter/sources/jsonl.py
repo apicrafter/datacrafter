@@ -1,13 +1,14 @@
+"""JSON Lines source module."""
 from json import loads
 
 from .base import BaseFileSource
 
 
 class JSONLinesSource(BaseFileSource):
+    """JSON Lines source implementation."""
     def __init__(self, filename=None, stream=None):
-        super(JSONLinesSource, self).__init__(filename, stream, binary=False)
+        super().__init__(filename, stream, binary=False)
         self.pos = 0
-        pass
 
     def id(self):
         return 'jsonl'
@@ -25,6 +26,6 @@ class JSONLinesSource(BaseFileSource):
     def read_bulk(self, num):
         """Read bulk JSON lines records"""
         chunk = []
-        for n in range(0, num):
+        for _ in range(0, num):
             chunk.append(loads(self.fobj.readline()))
         return chunk

@@ -1,20 +1,31 @@
-from openpyxl import load_workbook
+"""XLSX source module."""
+try:
+    from openpyxl import load_workbook
+    HAS_OPENPYXL = True
+except ImportError:
+    HAS_OPENPYXL = False
+    load_workbook = None
 
 from .base import BaseFileSource
 
 
 class XLSXSource(BaseFileSource):
+    """XLSX source implementation."""
     def __init__(self, filename=None, stream=None, keys=None, page=0, start_line=1):
-        super(XLSXSource, self).__init__(filename, stream, binary=False, noopen=True)
+        if not HAS_OPENPYXL:
+            raise ImportError(
+                "openpyxl is required for XLSXSource. "
+                "Install it with: pip install openpyxl"
+            )
+        super().__init__(filename, stream, binary=False, noopen=True)
         self.keys = keys
         self.start_line = start_line
         self.page = page
         self.pos = self.start_line
         self.reset()
-        pass
 
     def reset(self):
-        super(XLSXSource, self).reset()
+        super().reset()
         self.workbook = load_workbook(self.filename)
         self.sheet = self.workbook.active
         self.pos = self.start_line
@@ -23,9 +34,10 @@ class XLSXSource(BaseFileSource):
             self.skip(self.pos - 1)
 
     def skip(self, num):
+        """Skip num rows."""
         while num > 0:
             num -= 1
-            o = next(self.iter)
+            next(self.iter)
 
     def id(self):
         return 'xlsx'
@@ -36,7 +48,7 @@ class XLSXSource(BaseFileSource):
     def read(self):
         """Read single XLSX record"""
         row = next(self.iter)
-        tmp = list()
+        tmp = []
         for cell in row:
             tmp.append(str(cell.value))
         result = dict(zip(self.keys, tmp))
@@ -46,9 +58,9 @@ class XLSXSource(BaseFileSource):
     def read_bulk(self, num):
         """Read bulk XLSX records"""
         chunk = []
-        for n in range(0, num):
+        for _ in range(0, num):
             row = next(self.iter)
-            tmp = list()
+            tmp = []
             for cell in row:
                 tmp.append(str(cell.value))
             result = dict(zip(self.keys, tmp))

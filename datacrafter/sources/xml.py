@@ -1,17 +1,28 @@
-import lxml.etree as etree
+"""XML source module."""
+try:
+    from lxml import etree
+    HAS_LXML = True
+except ImportError:
+    HAS_LXML = False
+    etree = None
 
 from .base import BaseFileSource
 from ..common.converters import etree_to_dict
 
 
 class XMLSource(BaseFileSource):
+    """XML source implementation."""
     def __init__(self, filename=None, stream=None, tagname=None, prefix_strip=True):
-        super(XMLSource, self).__init__(filename, stream, binary=True, encoding='utf8')
+        if not HAS_LXML:
+            raise ImportError(
+                "lxml is required for XMLSource. "
+                "Install it with: pip install lxml"
+            )
+        super().__init__(filename, stream, binary=True, encoding='utf8')
         self.tagname = tagname
         self.prefix_strip = prefix_strip
         self.reader = etree.iterparse(self.fobj, recover=True)
         self.pos = 0
-        pass
 
     def id(self):
         return 'xml'
@@ -23,7 +34,7 @@ class XMLSource(BaseFileSource):
         """Read single XML record"""
         row = None
         while not row:
-            event, elem = next(self.reader)
+            _, elem = next(self.reader)
             shorttag = elem.tag.rsplit('}', 1)[-1]
             if shorttag == self.tagname:
                 if self.prefix_strip:
@@ -36,6 +47,6 @@ class XMLSource(BaseFileSource):
     def read_bulk(self, num):
         """Read bulk XML records"""
         chunk = []
-        for n in range(0, num):
+        for _ in range(0, num):
             chunk.append(self.read())
         return chunk

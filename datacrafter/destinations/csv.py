@@ -1,16 +1,20 @@
+"""CSV destination module."""
 from csv import DictWriter
 
 from .base import BaseFileDestination
 
 
 class CSVDestination(BaseFileDestination):
-    def __init__(self, filename, keys=None, delimiter=',', quotechar='"', compression=None):
-        super(CSVDestination, self).__init__(filename, binary=False, compression=compression)
+    """CSV destination implementation."""
+    def __init__(
+            self, filename, keys=None, delimiter=',', quotechar='"',
+            compression=None):
+        super().__init__(filename, binary=False, compression=compression)
         self.delimiter = delimiter
         self.quotechar = quotechar
         self.keys = keys
-        self.writer = DictWriter(self.fobj, fieldnames=self.keys, delimiter=delimiter, quotechar=quotechar)
-        pass
+        self.writer = DictWriter(
+            self.fobj, fieldnames=self.keys, delimiter=delimiter, quotechar=quotechar)
 
     def id(self):
         return 'csv'

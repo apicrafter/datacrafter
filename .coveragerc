@@ -1,2 +1,24 @@
 [run]
 source = datacrafter
+omit = 
+    */tests/*
+    */test_*.py
+    */__pycache__/*
+    */build/*
+    */dist/*
+    */datacrafter.egg-info/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstractmethod
+    def __del__
+    pass
+precision = 2
+show_missing = True
+skip_covered = False

@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.4] - 2025-01-XX
+## [1.0.4] - 2025-12-09
 
 ### Fixed
 - **Code Quality Improvements**: Comprehensive pylint-based code quality improvements

@@ -7,20 +7,21 @@ import sys
 
 
 def main():
+    """Main entry point for datacrafter CLI."""
     # Configure basic logging for startup errors
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         level=logging.WARNING  # Only show warnings/errors during startup
     )
-    
+
     try:
-        from .core import cli
+        from .core import cli  # pylint: disable=import-outside-toplevel
         cli()
     except KeyboardInterrupt:
         logging.warning("Ctrl-C pressed. Aborting")
         sys.exit(130)  # Standard exit code for SIGINT
-    except Exception as e:
-        logging.error(f"Fatal error: {e}", exc_info=True)
+    except Exception as error:
+        logging.error("Fatal error: %s", error, exc_info=True)
         sys.exit(1)
 
 
