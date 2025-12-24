@@ -71,11 +71,14 @@ class Project:
         """Enable logging to file and stderr with rotation support"""
         rootLogger = logging.getLogger()
 
+        # Preserve the current effective level (may be set to DEBUG for verbose mode)
+        current_level = rootLogger.getEffectiveLevel()
+        
         # Remove existing handlers to avoid duplicates
         rootLogger.handlers.clear()
 
-        # Set default level
-        rootLogger.setLevel(logging.DEBUG)  # Allow all levels, filter at handler level
+        # Set level - preserve DEBUG if it was set (for verbose), otherwise use DEBUG as default
+        rootLogger.setLevel(logging.DEBUG if current_level <= logging.DEBUG else logging.DEBUG)
 
         if structured:
             # Structured logging (JSON format)
@@ -119,8 +122,10 @@ class Project:
 
         if console:
             consoleHandler = logging.StreamHandler()
-            # Console shows INFO and above by default
-            consoleHandler.setLevel(logging.INFO)
+            # Use DEBUG level if verbose mode was enabled (current_level was DEBUG)
+            # Otherwise default to INFO for normal operation
+            console_level = logging.DEBUG if current_level <= logging.DEBUG else logging.INFO
+            consoleHandler.setLevel(console_level)
             consoleHandler.setFormatter(formatter)
             rootLogger.addHandler(consoleHandler)
 
@@ -318,22 +323,24 @@ class Project:
         """Execute project"""
         self.enable_logging(console=True, tofile=True, structured=structured_log)
         if self.project is None:
-            logging.error('Project file not found or not loaded')
-            return
+            error_msg = 'Project file not found or not loaded'
+            logging.error(error_msg)
+            raise ValueError(error_msg)
         isvalid, report = self.validate()
         logging.info("Started project: %s", self.project['project-name'])
         if not isvalid:
-            logging.error('Invalid configuration. See more info below')
+            error_msg = 'Invalid configuration. See more info below'
+            logging.error(error_msg)
             if report:
                 logging.error('Validation report: %s', report)
-            return
-            if init:
-                self.__create_dirs()
-            if pre_clean:
-                self.clean()
-            self.state = ProjectState(
-                filename=self.state_file, reset=pre_clean, autosave=True)
-            self.prepare()
-            self.collect(proceed)
-            self.process()
-            self.finish()
+            raise ValueError(f"{error_msg}. {report if report else ''}")
+        if init:
+            self.__create_dirs()
+        if pre_clean:
+            self.clean()
+        self.state = ProjectState(
+            filename=self.state_file, reset=pre_clean, autosave=True)
+        self.prepare()
+        self.collect(proceed)
+        self.process()
+        self.finish()

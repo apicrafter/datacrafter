@@ -1,0 +1,23 @@
+version: 1
+project-id: ee0cd7af-cf5e-4d1b-800a-fb9e3363a61b
+project-name: dcat
+
+extractor:
+  type: file-json
+  method: url
+  mode: singlefile
+  config:
+    url: https://fsm-data.sprep.org/data.json
+
+
+processor:
+  config:
+    tagname: dataset
+    type: json
+
+destination:
+  type: file-jsonl
+  compression: zst
+  storage: local
+  fileprefix: data
+
