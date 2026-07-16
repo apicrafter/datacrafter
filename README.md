@@ -316,7 +316,15 @@ destination:
 ### Running Tests
 
 ```bash
+# Install dev dependencies (includes pytest, coverage, pip-audit)
+pip install -r requirements-dev.txt
+pip install -e .
+
+# Run the test suite with coverage (enforces a 40% floor in .coveragerc)
 pytest
+
+# Audit dependencies for known vulnerabilities
+pip-audit -r requirements.txt
 ```
 
 ### Code Quality
@@ -332,23 +340,49 @@ flake8 datacrafter/
 mypy datacrafter/
 ```
 
-**Code Quality Status**: The codebase maintains a pylint score of 9.12/10, with comprehensive code quality improvements implemented in version 1.0.4.
+### Building & Packaging
+
+The project uses modern PEP 621 packaging (`pyproject.toml`); `setup.py` is kept
+only as a compatibility shim. Runtime dependencies are sourced from
+`requirements.txt` (single source of truth).
+
+```bash
+python -m build       # produces wheel + sdist in dist/
+```
+
+CI runs the test matrix (Python 3.9–3.13), pip-audit, and publishes to PyPI on tag
+via Trusted Publishing. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ### Contributing
 
-Contributions are welcome! Please see the [IMPROVEMENTS.md](IMPROVEMENTS.md) file for areas that need work.
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for setup,
+testing, linting, branching conventions, and the pull-request process.
 
 1. Fork the repository
-2. Create a feature branch
+2. Create a feature branch (`feat/...`) or fix branch (`fix/...`)
 3. Make your changes
 4. Add tests if applicable
 5. Submit a pull request
 
 ## Documentation
 
+- [CONTRIBUTING.md](CONTRIBUTING.md) - How to set up and contribute
 - [Dependencies](DEPENDENCIES.md) - Dependency management guide
-- [IMPROVEMENTS.md](IMPROVEMENTS.md) - Known issues and improvement suggestions
 - [CHANGELOG.md](CHANGELOG.md) - Version history
+
+## Security
+
+**Trust model.** Datacrafter runs configuration files (`datacrafter.yml`) and
+`code`-type extractor scripts as **trusted** input — these can execute arbitrary
+Python (via `runpy`) and should only come from a source you control. URLs, filenames,
+and downloaded data are treated as **untrusted** and are never passed to a shell.
+
+- TLS certificate verification is **enabled by default** for all HTTPS downloads.
+  Disable it only for trusted endpoints with a known self-signed cert (a warning is
+  logged).
+- To report a security vulnerability, please open a private advisory via
+  [GitHub Security Advisories](https://github.com/apicrafter/datacrafter/security/advisories/new)
+  rather than a public issue.
 
 ## License
 
