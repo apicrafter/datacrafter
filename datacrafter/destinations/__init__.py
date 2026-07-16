@@ -1,12 +1,21 @@
 """Destination modules for writing data to various targets."""
 import os
 
+from .._registry import (
+    UnknownDestinationTypeError, get_destination_class, list_destinations)
 from .bsonf import BSONDestination
 from .csv import CSVDestination
 from .jsonl import JSONLinesDestination
 from .mongo import MongoDBDestination
 from .arango import ArangoDBDestination
 from .meilisearch import MeilisearchDestination
+
+__all__ = [
+    "UnknownDestinationTypeError",
+    "get_destination_class",
+    "list_destinations",
+    "get_destination_from_config",
+]
 
 FILEEXT_MAP = {'file-jsonl': 'jsonl', 'file-bson': 'bson', 'file-csv': 'csv'}
 DESTINATION_TYPES_SEARCH = ['meilisearch', ]
@@ -35,12 +44,21 @@ def get_compression_value(options):
 
 
 def get_destination_from_config(dirpath, options):
-    """Temporary function to create destination from config.
+    """Create a destination instance from a config dict.
 
-    Should be replaced in the future.
+    The config ``type`` is validated against the destination registry; an unknown
+    type raises :class:`UnknownDestinationTypeError` listing the registered types.
+    (Per-type construction logic is retained here because destination constructors
+    take heterogeneous keyword arguments derived from config.)
     """
     if 'type' not in options:
-        raise NotImplementedError
+        raise UnknownDestinationTypeError(
+            "Destination config is missing the required 'type' key. "
+            f"Registered destination types: {list_destinations()}")
+    # Validate the type is registered; raises UnknownDestinationTypeError listing
+    # known types if not. The class itself is looked up from the registry so there
+    # is a single declaration point (the @register_destination decorator).
+    get_destination_class(options['type'])
     if options['type'] in DESTINATION_TYPES_SEARCH:
         if options['type'] == 'meilisearch':
             return MeilisearchDestination(
@@ -68,7 +86,9 @@ def get_destination_from_config(dirpath, options):
                 username=get_option_value(options, 'username', None),
                 password=get_option_value(options, 'password', None))
     if options['type'] not in DESTINATION_TYPES_FILES:
-        raise NotImplementedError
+        raise UnknownDestinationTypeError(
+            f"Unknown destination type {options['type']!r}. "
+            f"Registered destination types: {list_destinations()}")
     fileprefix = options['fileprefix']
     if options['type'] == 'file-jsonl':
         ext = FILEEXT_MAP[options['type']]

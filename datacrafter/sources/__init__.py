@@ -2,6 +2,8 @@
 """Source modules for reading data from various file formats."""
 import logging
 
+from .._registry import (
+    UnknownSourceTypeError, get_source_class, list_sources)
 from .bsonf import BSONSource
 from .csv import CSVSource
 from .json import JSONSource
@@ -11,6 +13,13 @@ from .xlsx import XLSXSource
 from .xml import XMLSource
 from .zipped import ZIPSourceWrapper
 from .zipxml import ZIPXMLSource
+
+__all__ = [
+    "UnknownSourceTypeError",
+    "get_source_class",
+    "list_sources",
+    "get_source_from_file",
+]
 
 
 def validate_options(options, required=None):
@@ -189,4 +198,6 @@ def get_source_from_file(filename, stype=None, options=None):
         else:
             return JSONLinesSource(filename=filename)
     else:
-        raise NotImplementedError(f'Source type {stype} is not implemented')
+        raise UnknownSourceTypeError(
+            f"Unknown source type {stype!r}. "
+            f"Registered source types: {list_sources()}")

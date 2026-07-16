@@ -11,6 +11,7 @@ except ImportError:
     open_workbook = None
 
 from .base import BaseFileSource
+from .._registry import register_source
 
 
 def read_single_row(rownum, ncols, datemode, keys, sheet):
@@ -37,6 +38,7 @@ def read_single_row(rownum, ncols, datemode, keys, sheet):
 
 
 
+@register_source("xls")
 class XLSSource(BaseFileSource):
     """XLS source implementation."""
     def __init__(self, filename=None, stream=None, keys=None, page=0, start_line=1):

@@ -2,8 +2,10 @@
 from csv import DictReader
 
 from .base import BaseFileSource
+from .._registry import register_source
 
 
+@register_source("csv")
 class CSVSource(BaseFileSource):
     """CSV source implementation."""
     def __init__(

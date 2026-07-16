@@ -10,8 +10,10 @@ except ImportError:
     meilisearch = None
 
 from .base import BaseSearchDestination
+from .._registry import register_destination
 
 
+@register_destination("meilisearch")
 class MeilisearchDestination(BaseSearchDestination):
     """Meilisearch Destination"""
     def __init__(self, connstr, indexname, token, reset=False, incremental=True):

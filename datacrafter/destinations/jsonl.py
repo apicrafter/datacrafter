@@ -2,9 +2,11 @@
 from json import dumps
 
 from .base import BaseFileDestination
+from .._registry import register_destination
 from ..common.mappers import date_handler
 
 
+@register_destination("file-jsonl")
 class JSONLinesDestination(BaseFileDestination):
     """JSON Lines destination implementation."""
     def __init__(self, filename, compression=None):

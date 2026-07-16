@@ -7,8 +7,10 @@ except ImportError:
     load_workbook = None
 
 from .base import BaseFileSource
+from .._registry import register_source
 
 
+@register_source("xlsx")
 class XLSXSource(BaseFileSource):
     """XLSX source implementation."""
     def __init__(self, filename=None, stream=None, keys=None, page=0, start_line=1):

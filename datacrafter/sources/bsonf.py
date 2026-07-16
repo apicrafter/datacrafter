@@ -7,8 +7,10 @@ except ImportError:
     bson = None
 
 from .base import BaseFileSource
+from .._registry import register_source
 
 
+@register_source("bson")
 class BSONSource(BaseFileSource):
     """BSON file source implementation."""
     def __init__(self, filename=None, stream=None):

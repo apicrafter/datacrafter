@@ -2,8 +2,10 @@
 from json import loads
 
 from .base import BaseFileSource
+from .._registry import register_source
 
 
+@register_source("jsonl")
 class JSONLinesSource(BaseFileSource):
     """JSON Lines source implementation."""
     def __init__(self, filename=None, stream=None):

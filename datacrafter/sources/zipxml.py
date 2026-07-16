@@ -7,9 +7,11 @@ except ImportError:
     etree = None
 
 from .zipped import ZIPSourceWrapper
+from .._registry import register_source
 from ..common.converters import etree_to_dict
 
 
+@register_source("zipxml")
 class ZIPXMLSource(ZIPSourceWrapper):
     """ZIP XML source implementation."""
     def __init__(self, filename=None, tagname=None, prefix_strip=True):

@@ -2,8 +2,10 @@
 from csv import DictWriter
 
 from .base import BaseFileDestination
+from .._registry import register_destination
 
 
+@register_destination("file-csv")
 class CSVDestination(BaseFileDestination):
     """CSV destination implementation."""
     def __init__(

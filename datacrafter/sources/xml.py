@@ -7,9 +7,11 @@ except ImportError:
     etree = None
 
 from .base import BaseFileSource
+from .._registry import register_source
 from ..common.converters import etree_to_dict
 
 
+@register_source("xml")
 class XMLSource(BaseFileSource):
     """XML source implementation."""
     def __init__(self, filename=None, stream=None, tagname=None, prefix_strip=True):

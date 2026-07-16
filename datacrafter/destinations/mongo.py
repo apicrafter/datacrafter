@@ -7,8 +7,10 @@ except ImportError:
     MongoClient = None
 
 from .base import BaseDBDestination
+from .._registry import register_destination
 
 
+@register_destination("mongodb")
 class MongoDBDestination(BaseDBDestination):
     """MongoDB destination implementation."""
     def __init__(self, connstr, dbname, tablename, username=None, password=None):

@@ -2,8 +2,10 @@
 import json
 
 from .base import BaseFileSource
+from .._registry import register_source
 
 
+@register_source("json")
 class JSONSource(BaseFileSource):
     """JSON source implementation."""
     def __init__(self, filename=None, stream=None, tagname=None):

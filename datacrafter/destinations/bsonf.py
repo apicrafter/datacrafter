@@ -7,8 +7,10 @@ except ImportError:
     BSON = None
 
 from .base import BaseFileDestination
+from .._registry import register_destination
 
 
+@register_destination("file-bson")
 class BSONDestination(BaseFileDestination):
     """BSON file destination implementation."""
     def __init__(self, filename, compression=None):

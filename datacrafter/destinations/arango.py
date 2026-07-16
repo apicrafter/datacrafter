@@ -8,8 +8,10 @@ except ImportError:
     ArangoClient = None
 
 from .base import BaseDBDestination
+from .._registry import register_destination
 
 
+@register_destination("arangodb")
 class ArangoDBDestination(BaseDBDestination):
     """ArangoDB Destination"""
     def __init__(self, connstr, dbname, tablename, username=None, password=None):
