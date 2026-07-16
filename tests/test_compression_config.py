@@ -9,6 +9,15 @@ import pytest
 from datacrafter.destinations import get_destination_from_config
 
 
+def _has_zstandard():
+    """Check if zstandard is installed"""
+    try:
+        import zstandard  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
 class TestCompressionConfig:
     """Tests for compression configuration with both 'compress' and 'compression' keys"""
     
@@ -230,10 +239,10 @@ class TestCompressionTypes:
         dest = get_destination_from_config(self.test_dir, options)
         dest.write({'test': 'data'})
         dest.close()
-        
+
         expected_file = os.path.join(self.test_dir, 'data.jsonl.zst')
         assert os.path.exists(expected_file)
-    
+
     def test_zip_compression(self):
         """Test zip compression"""
         options = {
@@ -244,18 +253,9 @@ class TestCompressionTypes:
         dest = get_destination_from_config(self.test_dir, options)
         dest.write({'test': 'data'})
         dest.close()
-        
+
         expected_file = os.path.join(self.test_dir, 'data.jsonl.zip')
         assert os.path.exists(expected_file)
-
-
-def _has_zstandard():
-    """Check if zstandard is installed"""
-    try:
-        import zstandard
-        return True
-    except ImportError:
-        return False
 
 
 if __name__ == '__main__':
