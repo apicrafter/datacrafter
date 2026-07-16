@@ -176,5 +176,5 @@ def xls_to_bson(source, outputbson, keys, start_page=0, start_line=0):
             outputbson.write(bson.BSON.encode(dict(zip(keys, tmp))))
 
 
-if __name__ == '__init__':
+if __name__ == '__main__':
     xml_to_jsonl(sys.argv[1], sys.argv[2], sys.argv[3])

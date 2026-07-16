@@ -18,7 +18,12 @@ date_handler = lambda obj: (
 
 
 def map_keys(obj, keys, qd=None):
-    """Maps object to the predefined schema from `keys`"""
+    """Maps object to the predefined schema from `keys`.
+
+    Keys present in ``obj`` but absent from ``keys`` are kept unchanged in the
+    result. Keys present in ``keys`` are renamed (and optionally type-converted)
+    according to their rule.
+    """
     if qd is not None:
         parser = qd
         datefunc = parser.parse
@@ -28,8 +33,20 @@ def map_keys(obj, keys, qd=None):
     for k in obj.keys():
         k1 = k.lstrip('@').lstrip('#')
         if k1 not in keys:
+            # Unknown key: keep it unchanged rather than raising KeyError.
             logging.info('Unknown key %s', k)
+            result[k] = obj[k]
+            continue
         rule = keys[k1]
+        # A rule may be a nested sub-schema (mapping field -> sub-rule dict) rather
+        # than a flat rename. Detect a sub-schema by `rule['name']` being a dict
+        # instead of a string: that means 'name' here is a child field, not a target.
+        if isinstance(rule, dict) and isinstance(rule.get('name'), dict):
+            if isinstance(obj[k], dict):
+                result[k] = map_keys(obj[k], rule, qd=qd)
+            else:
+                result[k] = obj[k]
+            continue
         newk = rule['name']
         if 'type' in rule.keys():
             if rule['type'] == TYPE_INT:
@@ -122,13 +139,19 @@ def convert_to_float(string):
 
 
 def convert_to_bool(string):
-    """String to boolean. #FIXME """
-    #    if len(string) == 0: return None
-    if string == '0' or string.lower() == 'false':
-        return False
-    if string == '1' or string.lower() == 'true':
-        return True
-        return string
+    """Convert a string to a boolean.
+
+    Returns ``True`` for canonical truthy strings (``"1"``/``"true"``), ``False``
+    for canonical falsy strings (``"0"``/``"false"``), and the original input
+    unchanged for any other value. Comparison is case-insensitive for the word forms.
+    """
+    if isinstance(string, str):
+        lowered = string.lower()
+        if lowered in ('0', 'false'):
+            return False
+        if lowered in ('1', 'true'):
+            return True
+    return string
 
 
 def map_document_fields(

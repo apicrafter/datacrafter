@@ -32,21 +32,21 @@ class TestBaseExtractor:
     def test_validate_missing_url(self, sample_project):
         """Test validation fails without URL for url method"""
         # Modify project config to have url method without url
-        sample_project.project['extractor']['method'] = 'url'
-        sample_project.project['extractor']['config'] = {}
-        
+        sample_project.project['extractor'] = {
+            'mode': 'singlefile', 'type': 'file-csv', 'method': 'url', 'config': {}}
         extractor = BaseExtractor(sample_project)
-        
+
         with pytest.raises(DataCrafterConfigurationError) as exc_info:
             extractor.validate()
-        
+
         assert 'url' in str(exc_info.value).lower()
-    
+
     def test_validate_urlbypattern_missing_keys(self, sample_project):
         """Test validation fails without required keys for urlbypattern"""
         # Modify project config
-        sample_project.project['extractor']['method'] = 'urlbypattern'
-        sample_project.project['extractor']['config'] = {}
+        sample_project.project['extractor'] = {
+            'mode': 'singlefile', 'type': 'file-csv',
+            'method': 'urlbypattern', 'config': {}}
         
         extractor = BaseExtractor(sample_project)
         

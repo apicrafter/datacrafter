@@ -8,11 +8,6 @@ import uuid
 
 import yaml
 
-try:
-    from yaml import CLoader as Loader
-except ImportError:
-    from yaml import Loader
-
 # Project imports
 from ..constants import DEFAULT_BULK_RECORDS
 from ..extractors.base import BaseExtractor
@@ -23,9 +18,13 @@ from ..destinations import get_destination_from_config
 
 
 def load_config(filename):
-    """Load YAML configuration file."""
+    """Load YAML configuration file using safe loading.
+
+    ``yaml.safe_load`` is used (rather than the full ``Loader``/``CLoader``) so that
+    configuration files cannot construct arbitrary Python objects via YAML tags.
+    """
     with open(filename, 'r', encoding='utf8') as file_obj:
-        data = yaml.load(file_obj, Loader=Loader)
+        data = yaml.safe_load(file_obj)
     return data
 
 
@@ -149,6 +148,9 @@ class Project:
         else:
             self.__create_dirs()
             self.__create_project_yaml(name)
+        # Load the (possibly just-created) project config so self.project is
+        # populated for subsequent operations (validate/process/etc.).
+        self.__read_project_file(self.project_filename)
 
 
     def __create_project_yaml(self, name=None, version="1", id=None):
@@ -284,7 +286,7 @@ class Project:
                                 logging.debug('Error closing source: %s', error)
                 except Exception as error:
                     logging.error('Error setting up source for %s: %s', filename, error)
-                    failed_files.append({'filename': filename, 'error': str(e)})
+                    failed_files.append({'filename': filename, 'error': str(error)})
                     continue
 
             # Summary

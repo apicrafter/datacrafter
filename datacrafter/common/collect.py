@@ -2,6 +2,7 @@
 import logging
 import os
 import shutil
+import subprocess
 import tempfile
 import time
 from functools import wraps
@@ -58,13 +59,23 @@ def retry_network_operation(
 
 
 @retry_network_operation(max_retries=DEFAULT_MAX_RETRIES)
-def get_file(url, filename, aria2=False, aria2path=None, timeout=DEFAULT_TIMEOUT):
-    """Download file from URL with proper error handling and retry logic"""
+def get_file(url, filename, aria2=False, aria2path=None, timeout=DEFAULT_TIMEOUT,
+             verify_tls=True):
+    """Download file from URL with proper error handling and retry logic.
+
+    TLS certificate verification is enabled by default. Pass ``verify_tls=False``
+    only when connecting to a trusted endpoint with a self-signed/invalid cert; a
+    warning is logged in that case.
+    """
     logging.info('Retrieving %s from %s', filename, url)
+    if not verify_tls:
+        logging.warning(
+            'TLS certificate verification disabled for download of %s; this is '
+            'insecure and should only be used for trusted endpoints.', url)
     page = None
     try:
         page = requests.get(
-            url, headers=REQUEST_HEADER, stream=True, verify=False,
+            url, headers=REQUEST_HEADER, stream=True, verify=verify_tls,
             timeout=timeout)
         page.raise_for_status()  # Raise exception for bad status codes
         if not aria2:
@@ -79,14 +90,16 @@ def get_file(url, filename, aria2=False, aria2path=None, timeout=DEFAULT_TIMEOUT
                     if chunk % 1000 == 0:
                         logging.debug('File %s to size %s', filename, total)
         else:
+            # Invoke aria2 via an explicit argument list (shell=False) so URLs and
+            # filenames cannot be interpreted as shell commands.
+            cmd = [aria2path, '--retry-wait=10']
             dirpath = os.path.dirname(filename)
             basename = os.path.basename(filename)
-            if len(dirpath) > 0:
-                s = f"{aria2path} --retry-wait=10 -d {dirpath} --out={basename} {url}"
-            else:
-                s = f"{aria2path} --retry-wait=10 --out={basename} {url}"
-            logging.info('Aria2 command line: %s', s)
-            os.system(s)
+            if dirpath:
+                cmd.extend(['-d', dirpath])
+            cmd.extend(['--out', basename, url])
+            logging.info('Aria2 command: %s', cmd)
+            subprocess.run(cmd, check=True)
         return filename
     except requests.exceptions.RequestException as e:
         error_msg = f'Failed to download {url}: {e}'
@@ -106,12 +119,12 @@ def is_absolute_url(url):
 
 
 @retry_network_operation(max_retries=DEFAULT_MAX_RETRIES)
-def _fetch_url_content(url, timeout=DEFAULT_TIMEOUT):
+def _fetch_url_content(url, timeout=DEFAULT_TIMEOUT, verify_tls=True):
     """Helper function to fetch URL content with retry logic"""
     session = requests.Session()
     try:
         session.headers.update({'User-Agent': DEFAULT_USER_AGENT})
-        response = session.get(url, verify=False, timeout=timeout)
+        response = session.get(url, verify=verify_tls, timeout=timeout)
         response.raise_for_status()
         return response.content
     finally:
@@ -121,10 +134,10 @@ def _fetch_url_content(url, timeout=DEFAULT_TIMEOUT):
 def get_file_by_pattern(
         _current_path, _temp_path, url, url_data_prefix, filename,
         file_type=None, aria2=False, aria2path=None, force=True,
-        timeout=DEFAULT_TIMEOUT):
+        timeout=DEFAULT_TIMEOUT, verify_tls=True):
     """Collects specific file by it's url pattern and saves it as filename"""
     try:
-        html_data = _fetch_url_content(url, timeout=timeout)
+        html_data = _fetch_url_content(url, timeout=timeout, verify_tls=verify_tls)
         soup = BeautifulSoup(html_data, features='lxml')
         data_url = None
         for u in soup.find_all('a'):
@@ -148,7 +161,7 @@ def get_file_by_pattern(
         if not os.path.exists(filename) or force:
             get_file(
                 data_url, filename, aria2=aria2, aria2path=aria2path,
-                timeout=timeout)
+                timeout=timeout, verify_tls=verify_tls)
             logging.info('Downloaded %s to %s', data_url, filename)
         else:
             logging.info('File %s already downloaded', filename)
@@ -165,11 +178,11 @@ def get_file_by_pattern(
 def get_file_by_name(
         current_path, _temp_path, url, name=None, prefix=None,
         file_prefix=None, file_type=None, aria2=False, aria2path=None,
-        force=True):
+        force=True, verify_tls=True):
     """Collects specific file by it's name"""
     temp_filepath = None
     try:
-        html_data = _fetch_url_content(url)
+        html_data = _fetch_url_content(url, verify_tls=verify_tls)
         soup = BeautifulSoup(html_data, features='lxml')
         data_url = None
         for u in soup.find_all('a'):
@@ -194,7 +207,8 @@ def get_file_by_name(
                 current_path, f"{file_prefix}_current.{file_type}")
             logging.info('Temp %s', temp_filepath)
             if not os.path.exists(temp_filepath) or force:
-                get_file(data_url, temp_filepath, aria2=aria2, aria2path=aria2path)
+                get_file(data_url, temp_filepath, aria2=aria2, aria2path=aria2path,
+                         verify_tls=verify_tls)
                 logging.info('Downloaded %s to %s', data_url, filename)
             else:
                 logging.info('File %s already downloaded', filename)
