@@ -222,7 +222,7 @@ DEFAULT_CONFIG_PARAMS = {'autoid': {'type': bool, 'default': True},
                          },
                          }
 
-DEFAILT_CONFIG = {'config': {}}
+DEFAULT_CONFIG = {'config': {}}
 
 
 class CommonProcessor(BaseProcessor):
@@ -233,7 +233,7 @@ class CommonProcessor(BaseProcessor):
         if 'processor' in self.project.project.keys():
             self.params = self.project.project['processor']
         else:
-            self.params = DEFAILT_CONFIG.copy()
+            self.params = DEFAULT_CONFIG.copy()
         #        self.destination = destination
         self.__set_default_config()
         error_strategy = getattr(self, 'error_strategy', ERROR_STRATEGY_SKIP)

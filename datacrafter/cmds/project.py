@@ -76,8 +76,11 @@ class Project:
         # Remove existing handlers to avoid duplicates
         rootLogger.handlers.clear()
 
-        # Set level - preserve DEBUG if it was set (for verbose), otherwise use DEBUG as default
-        rootLogger.setLevel(logging.DEBUG if current_level <= logging.DEBUG else logging.DEBUG)
+        # Preserve DEBUG if it was already set (e.g. for verbose mode); otherwise
+        # default to INFO for normal operation. (Previously this was a no-op
+        # tautology whose two branches both returned logging.DEBUG.)
+        rootLogger.setLevel(
+            logging.DEBUG if current_level <= logging.DEBUG else logging.INFO)
 
         if structured:
             # Structured logging (JSON format)

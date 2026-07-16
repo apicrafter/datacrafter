@@ -1,3 +1,6 @@
+from typing import Any, Iterator, List, Optional
+
+
 SOURCE_TYPE_STREAM = 10
 SOURCE_TYPE_FILE = 20
 DEFAULT_BULK_NUMBER = 100
@@ -6,37 +9,37 @@ DEFAULT_BULK_NUMBER = 100
 class BaseSource:
     """Base data source class"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset iterator"""
         raise NotImplementedError
 
-    def id(self):
+    def id(self) -> str:
         """Identifier of selected destination"""
         raise NotImplementedError
 
-    def read(self, skip_empty=True):
+    def read(self, skip_empty: bool = True) -> Optional[Any]:
         """Read single record"""
         raise NotImplementedError
 
-    def read_bulk(self, num=DEFAULT_BULK_NUMBER):
+    def read_bulk(self, num: int = DEFAULT_BULK_NUMBER) -> List[Any]:
         """Read multiple records"""
         raise NotImplementedError
 
-    def is_flat(self):
+    def is_flat(self) -> bool:
         """Is source flat flat. Default: False"""
         return False
 
-    def is_streaming(self):
+    def is_streaming(self) -> bool:
         """Is source streaming. Default: False"""
         return False
 
-    def __next__(self):
+    def __next__(self) -> Any:
         return self.read()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Any]:
         self.reset()
         return self
 
@@ -44,19 +47,21 @@ class BaseSource:
 class BaseFileSource(BaseSource):
     """Basic file source"""
 
-    def id(self):
+    def id(self) -> str:
         """Identifier of selected source - must be overridden"""
         raise NotImplementedError
 
-    def read(self, skip_empty=True):
+    def read(self, skip_empty: bool = True) -> Optional[Any]:
         """Read single record - must be overridden"""
         raise NotImplementedError
 
-    def read_bulk(self, num=DEFAULT_BULK_NUMBER):
+    def read_bulk(self, num: int = DEFAULT_BULK_NUMBER) -> List[Any]:
         """Read multiple records - must be overridden"""
         raise NotImplementedError
 
-    def __init__(self, filename, stream, binary=False, encoding='utf8', noopen=False):
+    def __init__(self, filename: Optional[str], stream: Optional[Any],
+                 binary: bool = False, encoding: str = 'utf8',
+                 noopen: bool = False) -> None:
         self.filename = filename
         self.noopen = noopen
         if stream is not None:

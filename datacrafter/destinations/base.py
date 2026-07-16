@@ -5,11 +5,11 @@ import logging
 import os.path
 from bz2 import BZ2File
 from lzma import LZMAFile
+from typing import Any, Iterable, Optional
 from zipfile import ZipFile, ZIP_DEFLATED
 
-SUPPORTED_FILE_TYPES = [
-    'xls', 'xlsx', 'csv', 'xml', 'json', 'jsonl', 'yaml', 'tsv', 'sql',
-    'bson', 'parquet']
+from ..constants import SUPPORTED_FILE_TYPES
+
 COMPRESSED_FILE_TYPES = [
     'gz', 'xz', 'zip', 'lz4', '7z', 'bz2', 'zst']
 BINARY_FILE_TYPES = ['xls', 'xlsx', 'bson', 'parquet'] + COMPRESSED_FILE_TYPES
@@ -40,26 +40,26 @@ except ImportError:
 class BaseDestination:
     """Base destination class"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
-    def id(self):
+    def id(self) -> str:
         """Identifier of selected destination"""
         raise NotImplementedError
 
-    def write(self, record):
+    def write(self, record: Any) -> None:
         """Write single record"""
         raise NotImplementedError
 
-    def write_bulk(self, records):
+    def write_bulk(self, records: Iterable[Any]) -> None:
         """Write multiple records"""
         raise NotImplementedError
 
-    def is_flat(self):
+    def is_flat(self) -> bool:
         """Is destination flat. Default: False"""
         return False
 
-    def is_streaming(self):
+    def is_streaming(self) -> bool:
         """Is destination streaming. Default: False"""
         return False
 
@@ -67,21 +67,21 @@ class BaseDestination:
 class BaseFileDestination(BaseDestination):
     """Basic file destination"""
 
-    def id(self):
+    def id(self) -> str:
         """Identifier of selected destination - must be overridden"""
         raise NotImplementedError
 
-    def write(self, record):
+    def write(self, record: Any) -> None:
         """Write single record - must be overridden"""
         raise NotImplementedError
 
-    def write_bulk(self, records):
+    def write_bulk(self, records: Iterable[Any]) -> None:
         """Write multiple records - must be overridden"""
         raise NotImplementedError
 
     def __init__(
-            self, filename, binary=False, encoding='utf8',
-            compression=None, ftype=None):
+            self, filename: str, binary: bool = False, encoding: str = 'utf8',
+            compression: Optional[str] = None, ftype: Optional[str] = None) -> None:
         self.binary = binary
         self.ftype = ftype
         self.mode = 'wb' if binary else 'w'
@@ -183,8 +183,9 @@ class BaseFileDestination(BaseDestination):
                     if self._underlying_file is not None:
                         try:
                             self._underlying_file.close()
-                        except Exception:
-                            pass
+                        except Exception as close_error:
+                            logging.debug(
+                                'Error closing underlying file: %s', close_error)
                 except Exception as error:
                     logging.warning(
                         'Unexpected error closing file object: %s', error)
@@ -192,8 +193,9 @@ class BaseFileDestination(BaseDestination):
                     if self._underlying_file is not None:
                         try:
                             self._underlying_file.close()
-                        except Exception:
-                            pass
+                        except Exception as close_error:
+                            logging.debug(
+                                'Error closing underlying file: %s', close_error)
         except Exception as error:
             logging.warning('Error in close() method: %s', error)
         finally:

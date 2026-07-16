@@ -11,6 +11,9 @@ from urllib import parse
 import requests
 from bs4 import BeautifulSoup
 
+from ..constants import (
+    DEFAULT_MAX_RETRIES, DEFAULT_RETRY_BACKOFF, DEFAULT_RETRY_DELAY)
+
 REQUEST_HEADER = {
     'User-Agent': (
         'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) '
@@ -21,9 +24,6 @@ DEFAULT_USER_AGENT = (
     'Gecko/20100101 Firefox/68.0')
 DEFAULT_CHUNK_SIZE = 4096
 DEFAULT_TIMEOUT = 30
-DEFAULT_MAX_RETRIES = 3
-DEFAULT_RETRY_DELAY = 1.0
-DEFAULT_RETRY_BACKOFF = 2.0
 
 
 def retry_network_operation(
