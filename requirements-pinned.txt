@@ -1,25 +1,26 @@
 # Pinned versions for production stability
 # Generated from requirements.txt - update regularly for security patches
 # Use requirements.txt for development (allows patch updates)
+#
+# Pins reflect the floor versions from requirements.txt, which are chosen to be
+# free of known CVEs and compatible with Python 3.9-3.13. Bump these to current
+# releases before publishing; run `pip-audit` against the resolved set.
 
-chardet==3.0.4
+chardet==5.0.0
 typer==0.9.0
 jsonlines==1.2.0
 openpyxl==3.0.5
 orjson==3.6.6
-pandas==1.1.3
-pymongo==3.11.0
+pandas==2.0.0
+pymongo==4.6.0
 qddate==0.1.1
 tabulate==0.8.7
 tqdm==4.64.0
 validators==0.18.1
 xlrd==1.2.0
-requests==2.28.0
-beautifulsoup4==4.11.0
-lxml==4.9.0
+requests==2.31.0
+beautifulsoup4==4.12.0
+lxml==4.9.1
 dictquery==0.4.0
-pyyaml==6.0
-
-# Note: apibackuper version not specified - check package for latest version
-# apibackuper
-
+pyyaml==6.0.1
+apibackuper==1.0.4

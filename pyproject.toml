@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "datacrafter"
+description = "datacrafter: a command-line ETL tool with NoSQL in mind"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "Ivan Begtin", email = "ivan@begtin.tech" },
+]
+# Version is read dynamically from datacrafter.__version__ (single source of truth)
+dynamic = ["version", "dependencies"]
+
+requires-python = ">=3.9"
+keywords = ["json", "jsonl", "csv", "bson", "cli", "dataset", "etl", "data-pipelines"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: Apache Software License",
+    "Topic :: Software Development",
+    "Topic :: System :: Networking",
+    "Topic :: Terminals",
+    "Topic :: Text Processing",
+    "Topic :: Utilities",
+]
+
+[project.urls]
+Homepage = "https://github.com/apicrafter/datacrafter/"
+Source = "https://github.com/apicrafter/datacrafter/"
+Download = "https://github.com/apicrafter/datacrafter/"
+
+[project.scripts]
+datacrafter = "datacrafter.__main__:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "datacrafter.__version__" }
+# Runtime dependencies are sourced from requirements.txt so there is a single
+# source of truth for version floors shared with the dev workflow.
+dependencies = { file = ["requirements.txt"] }
+
+[tool.setuptools.packages.find]
+exclude = ["tests*", "tests.*"]
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false

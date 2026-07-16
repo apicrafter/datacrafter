@@ -6,14 +6,19 @@ This document describes the dependency management strategy for datacrafter.
 
 ## Dependency Files
 
-- **requirements.txt** - Development dependencies with minimum versions (allows patch updates)
+- **requirements.txt** - Runtime dependencies with minimum versions (the single source of
+  truth; `pyproject.toml` reads this via `tool.setuptools.dynamic.dependencies`)
 - **requirements-pinned.txt** - Production dependencies with exact versions (for reproducible builds)
-- **requirements-dev.txt** - Development tools and test dependencies
-- **setup.py** - Package installation dependencies (should match requirements.txt)
+- **requirements-dev.txt** - Development tools and test dependencies (also pulls in `requirements.txt`)
+- **pyproject.toml** - Package metadata and build configuration; runtime deps sourced from
+  `requirements.txt` so the two never drift
 
 ## Dependency Synchronization
 
-The dependencies in `setup.py` should match `requirements.txt`. Both files are maintained manually and should be kept in sync.
+Runtime dependencies live **only** in `requirements.txt`. The `pyproject.toml`
+`[tool.setuptools.dynamic] dependencies = { file = ["requirements.txt"] }` declaration
+reads that file at build time, so there is no second copy to keep in sync. To change a
+dependency floor, edit `requirements.txt` only.
 
 ## Security Scanning
 
@@ -33,9 +38,9 @@ pip-audit -r requirements.txt --desc
 ## Updating Dependencies
 
 ### For Development
-1. Update `requirements.txt` with new minimum versions
-2. Update `setup.py` to match
-3. Test with: `pip install -r requirements.txt`
+1. Update `requirements.txt` with new minimum versions (this is the single source)
+2. Test with: `pip install -r requirements.txt`
+3. `pyproject.toml` picks up the change automatically on the next build
 
 ### For Production
 1. Update `requirements-pinned.txt` with exact versions
@@ -80,17 +85,15 @@ pip-audit -r requirements.txt --desc
 
 ## Adding New Dependencies
 
-1. Add to `requirements.txt` with minimum version
-2. Add to `setup.py` `install_requires`
-3. Update `requirements-pinned.txt` if needed
-4. Document in this file
-5. Run security scan: `pip-audit -r requirements.txt`
+1. Add to `requirements.txt` with a `>=` minimum version (picks up in pyproject.toml automatically)
+2. Update `requirements-pinned.txt` with the resolved version if needed
+3. Document in this file
+4. Run security scan: `pip-audit -r requirements.txt`
 
 ## Removing Dependencies
 
 1. Remove from `requirements.txt`
-2. Remove from `setup.py`
-3. Remove from `requirements-pinned.txt`
-4. Check for any remaining imports
-5. Update this documentation
+2. Remove from `requirements-pinned.txt`
+3. Check for any remaining imports
+4. Update this documentation
 
