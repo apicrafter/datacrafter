@@ -1,0 +1,23 @@
+# CSV extracted from a URL into JSONL.
+
+version: "1"
+project-name: csv-url
+project-id: example-csv-url
+
+extractor:
+  mode: singlefile
+  type: file-csv
+  method: url
+  force: true
+  config:
+    url: https://example.com/data.csv
+
+processor:
+  config:
+    autotype: true
+    autoid: true
+    error_strategy: skip
+
+destination:
+  type: file-jsonl
+  fileprefix: output

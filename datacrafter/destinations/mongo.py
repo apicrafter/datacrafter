@@ -6,8 +6,8 @@ except ImportError:
     HAS_PYMONGO = False
     MongoClient = None
 
-from .base import BaseDBDestination
 from .._registry import register_destination
+from .base import BaseDBDestination
 
 
 @register_destination("mongodb")

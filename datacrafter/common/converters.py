@@ -139,25 +139,29 @@ def xls_to_json(source, output, keys, start_page=0, start_line=0):
         tmp = []
         for i in range(0, sheet.ncols):
             tmp.append(sheet.row_values(rownum)[i])
-        l = json.dumps(dict(zip(keys, tmp)))
-        output.write(l.encode('utf8'))
+        line = json.dumps(dict(zip(keys, tmp)))
+        output.write(line.encode('utf8'))
         output.write('\n'.encode('utf8'))
 
 
-def xlsx_to_json(source, output, keys, _start_page=0, start_line=0):
+def xlsx_to_json(source, output, keys, start_page=0, start_line=0):
     """Convert XLSX to JSON format."""
-    sheet = source.active  # FIXME! Use start_page instead
+    if isinstance(start_page, str):
+        sheet = source[start_page]
+    else:
+        sheet = source.worksheets[start_page]
     n = 0
     for row in sheet.iter_rows():
         n += 1
-        if n < start_line: continue
+        if n < start_line:
+            continue
         tmp = []
         for cell in row:
             tmp.append(cell.value)
 
-        #        l = json.dumps(dict(zip(keys, tmp)), ensure_ascii=False)
-        l = dumps(dict(zip(keys, tmp)), ensure_ascii=False)
-        output.write(l.encode('utf8'))
+        #        line = json.dumps(dict(zip(keys, tmp)), ensure_ascii=False)
+        line = dumps(dict(zip(keys, tmp)), ensure_ascii=False)
+        output.write(line.encode('utf8'))
         output.write('\n'.encode('utf8'))
 
 

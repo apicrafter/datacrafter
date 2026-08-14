@@ -10,8 +10,8 @@ except ImportError:
     xlrd = None
     open_workbook = None
 
-from .base import BaseFileSource
 from .._registry import register_source
+from .base import BaseFileSource
 
 
 def read_single_row(rownum, ncols, datemode, keys, sheet):

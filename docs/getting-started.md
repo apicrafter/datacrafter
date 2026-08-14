@@ -17,7 +17,7 @@ Before you can get started with DataCrafter and the [`datacrafter` CLI](/referen
 
 ### Local installation
 
-If you're running Linux or macOS and have [Python](https://www.python.org/) 3.7, 3.8 or 3.9 installed,
+If you're running Linux or macOS and have [Python](https://www.python.org/) 3.9 or newer installed,
 we recommend installing DataCrafter into a dedicated [Python virtual environment](https://docs.python.org/3/glossary.html#term-virtual-environment)
 inside the directory that will hold your [DataCrafter projects](/concepts/project).
 
@@ -72,12 +72,14 @@ it's time to create a new [DataCrafter project](/concepts/project).
     datacrafter init my-datacrafter-project
    ```
 
+   `--path` / `--name` still work (`datacrafter init --path DIR --name NAME`). If you pass a directory, that folder is created and `project-name` defaults to its basename.
+
 This will create a new directory with, among other things, your [`datacrafter.yml` project file](/concepts/project#datacrafter-yml-project-file):
 
     ```yml
     version: 1
     project-id: <random UUID>
-    project-name: 
+    project-name: my-datacrafter-project
     ```
 
 1. Navigate to the newly created project directory:
@@ -103,15 +105,21 @@ This will create a new directory with, among other things, your [`datacrafter.ym
 
 ## Add an extractor to pull data from a source
 
-Current implementation of DataCrafter include single extractor with several types of extraction types:
+An extractor downloads or generates files into `current/`. Configure one with
+`extractor:` or several with `extractors:`.
 
-- _singlefile_ - extract data from single data file, dataset 
-- _api_ - extract file from existing API endpoint.  
-- _code_ - any code that extracts files and saves to project data folder
+**Modes** (`mode`) are `singlefile`, `api`, or `code`.
 
-### Examples of extractors 
+**Types** include file types (`file-csv`, `file-json`, `file-jsonl`, `file-xml`,
+`file-xls`, `file-xlsx`, `file-zip`), plus `api`, `code`, `rss`, and `dcat`.
 
-Extracts single JSON file from www.yota.ru website
+**Methods** for files are typically `url` or `urlbypattern`. APIBackuper uses
+`method: apibackuper`.
+
+### Examples of extractors
+
+Extracts a single JSON file from a URL:
+
 ```yml
 extractor:
   type: file-json
@@ -119,10 +127,10 @@ extractor:
   mode: singlefile
   config:
     url: https://www.yota.ru/c/portal/sales-points
-
 ```
 
-Extracts single file name as ZIP file, file found by prefix in _config.prefix_ settings and url prefix of the file defined in _config.data_prefix_.
+Finds a ZIP on an HTML index by prefix (`urlbypattern`):
+
 ```yml
 extractor:
   type: file-zip
@@ -133,17 +141,33 @@ extractor:
     data_prefix: https://data.nalog.ru/opendata/7707329152-taxoffence/data-
 ```
 
-Simple API extractor using [apibackuper](https://github.com/ruarxive/apibackuper) library. API specification defined in storage/apibackuper.cfg 
+APIBackuper export. Put `apibackuper.cfg` under `storage/` and use `mode: api`
+(not `full` — validation rejects unknown modes):
+
 ```yml
 extractor:
   type: api
   method: apibackuper
-  mode: full
+  mode: api
 ```
 
-After extractor job complete result stored in `<projectname>/current` directory and in file `state.json`
+RSS/Atom or DCAT catalogs, or several extractors in one project:
 
-Result of the success extractor stage
+```yml
+extractors:
+  - name: feed
+    type: rss
+    config:
+      url: https://example.com/feed.xml
+  - name: catalog
+    type: dcat
+    config:
+      url: https://example.com/catalog.json
+```
+
+After the extractor stage, files land in `<project>/current` and `state.json`
+records the result:
+
 ```json
 {
     "stages": [
@@ -159,6 +183,7 @@ Result of the success extractor stage
             ]
         }
     ]
+}
 ```
 
 ## Configure processor
@@ -201,10 +226,8 @@ to define such parameters as `start_line` and `keys` to lines to Python dict obj
 processor:
   config:
     start_line: 1
-    autoid: True
-    autotype: True
-    autoindex: True
-    autoindex_mode: uniq,dict
+    autoid: true
+    autotype: true
     keys: territory,years,id,kpp,fullname,shortname,leader_surname,leader_firstname,leader_midname,phone,fax,email,numlic,lic_date,licend_date,functions,smoreg_date
   custom:
      type: script
@@ -227,9 +250,11 @@ or web service.
 
 Destinations could have following types:
 
-- `file-bson` - file as MongoDB BSON file 
-- `file-json` - file as JSON lines (NDJSON) file format
-- `file-csv` - file as CSV file
+- `file-jsonl` - JSON Lines (NDJSON)
+- `file-bson` - MongoDB BSON file
+- `file-csv` - CSV file
+- `file-parquet` - Parquet file (requires pyarrow)
+- `mongodb`, `arangodb`, `couchdb`, `meilisearch` - document stores / search
 
 Example destination as BSON file
 ```yml

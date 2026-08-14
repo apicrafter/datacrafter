@@ -1,8 +1,8 @@
 """CSV source module."""
 from csv import DictReader
 
-from .base import BaseFileSource
 from .._registry import register_source
+from .base import BaseFileSource
 
 
 @register_source("csv")

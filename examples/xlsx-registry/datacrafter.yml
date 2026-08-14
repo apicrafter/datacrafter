@@ -1,0 +1,25 @@
+# Excel registry dump. Set `keys` to the header names of the sheet.
+
+version: "1"
+project-name: xlsx-registry
+project-id: example-xlsx-registry
+
+extractor:
+  mode: singlefile
+  type: file-xlsx
+  method: url
+  force: true
+  config:
+    url: https://example.com/registry.xlsx
+
+processor:
+  config:
+    type: xlsx
+    start_line: 1
+    keys: id,name,region
+    autotype: true
+    error_strategy: skip
+
+destination:
+  type: file-jsonl
+  fileprefix: registry

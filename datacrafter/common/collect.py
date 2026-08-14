@@ -11,8 +11,7 @@ from urllib import parse
 import requests
 from bs4 import BeautifulSoup
 
-from ..constants import (
-    DEFAULT_MAX_RETRIES, DEFAULT_RETRY_BACKOFF, DEFAULT_RETRY_DELAY)
+from ..constants import DEFAULT_MAX_RETRIES, DEFAULT_RETRY_BACKOFF, DEFAULT_RETRY_DELAY
 
 REQUEST_HEADER = {
     'User-Agent': (
@@ -221,7 +220,7 @@ def get_file_by_name(
             error_msg += f' (Status: {e.response.status_code})'
         logging.error(error_msg)
         raise
-    except Exception as e:
+    except Exception:
         # Clean up temp file on error
         if temp_filepath and os.path.exists(temp_filepath):
             try:

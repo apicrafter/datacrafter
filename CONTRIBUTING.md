@@ -33,7 +33,7 @@ pytest tests/test_mappers.py
 pytest -m unit
 ```
 
-Test coverage is gated at a minimum floor (currently 40%, target 80%). Changes that
+Test coverage is gated at a minimum floor (currently 80%). Changes that
 reduce coverage below the floor will fail CI; please add or update tests with your
 change. External services (MongoDB, ArangoDB, CouchDB, Meilisearch) are mocked â€”
 **never** write a test that requires a live database.
@@ -42,12 +42,12 @@ change. External services (MongoDB, ArangoDB, CouchDB, Meilisearch) are mocked â
 
 ```bash
 pylint datacrafter/
-flake8 datacrafter/
-mypy datacrafter/        # optional; type hints are being added incrementally
-pip-audit -r requirements.txt   # check for known vulnerabilities
+ruff check datacrafter tests
+mypy datacrafter/_registry.py datacrafter/sources/base.py datacrafter/destinations/base.py
+pip-audit -r requirements.txt
 ```
 
-CI runs pylint and pip-audit on every push and pull request.
+Install git hooks with `pre-commit install`. CI runs pytest (coverage floor 80%), ruff (E/F/W/I), and pip-audit.
 
 ## Git Workflow
 

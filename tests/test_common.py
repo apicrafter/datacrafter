@@ -57,6 +57,12 @@ class TestGetDictValueDeep:
         assert get_dict_value_deep(data, 'name') == 'Alice'
         assert get_dict_value_deep(data, 'name', as_array=True) == ['Alice', 'Bob']
 
+    def test_nested_list_as_array(self):
+        data = [{'user': {'name': 'Alice'}}, {'user': {'name': 'Bob'}}]
+        assert get_dict_value_deep(data, 'user.name', as_array=True) == [
+            'Alice', 'Bob']
+        assert get_dict_value_deep(data, 'user.name') == 'Alice'
+
 
 class TestSetDictValue:
     """Tests for set_dict_value function"""

@@ -1,9 +1,9 @@
 """JSON Lines destination module."""
 from json import dumps
 
-from .base import BaseFileDestination
 from .._registry import register_destination
 from ..common.mappers import date_handler
+from .base import BaseFileDestination
 
 
 @register_destination("file-jsonl")

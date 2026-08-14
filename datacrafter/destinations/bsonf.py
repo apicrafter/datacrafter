@@ -6,8 +6,8 @@ except ImportError:
     HAS_BSON = False
     BSON = None
 
-from .base import BaseFileDestination
 from .._registry import register_destination
+from .base import BaseFileDestination
 
 
 @register_destination("file-bson")

@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Extractors register with `@register_extractor`; `get_extractor()` and
+  `config schema` use `list_extractors()`.
+- Processor `run()` uses a single buffered write path and records processor stats
+  in `state.json`.
+- `autotype` infers int/float/bool/date types from a record sample; `autoid` writes
+  a stable `_id` (opt-in). Failed/skipped records go to `output/errors.jsonl`.
+- `datacrafter schema`, `datacrafter metrics`, and `datacrafter run --dry-run`.
+- In-repo pipeline recipes under `examples/`.
+- `${VAR}` / `${VAR:-default}` interpolation in `datacrafter.yml`.
+- `file-parquet` destination (optional pyarrow), `datapackage.json` beside file output.
+- RSS/Atom and DCAT catalog extractors; `extractors:` list in one project.
+- CLI tests for `run` and `status`; extractor `run()` tests with mocked downloads.
+- Tests for JSON/BSON/XML/XLSX/XLS/ZIPXML sources, API/DCAT extractors, and
+  Project collect/process/run.
+- ruff + pre-commit; publish workflow runs tests before uploading to PyPI.
+
+### Changed
+- Coverage floor raised from 40% to 80%.
+- Source, destination, and extractor factories construct classes from the plugin registry.
+- CI ruff job runs the full E/F/W/I set from `pyproject.toml` (not pyflakes-only).
+- README and docs describe implemented features only; Meltano/ELT copy removed
+  from the concepts docs. Python requirement documented as 3.9+.
+- `run --dry-run` lists every `extractors:` entry (and keeps `extractor` as the first spec).
+- `datacrafter init DIRECTORY` creates that directory (same as `--path`); docs match live extractor/destination types.
+
+### Fixed
+- XLSX source factory no longer raises `NameError` for `start_line` when XLS was
+  not opened first in the same process.
+- `Project.validate()` no longer always returns success.
+- Source factory no longer treats a `.zip` archive as stream compression, so
+  `zipxml` sources open the ZIP path.
+- XLSX sources and `xlsx_to_json` honor the selected sheet (`page` / `start_page`)
+  instead of always using the active worksheet.
+
 ## [1.0.4] - 2025-12-09
 
 ### Fixed

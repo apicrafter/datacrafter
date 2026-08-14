@@ -9,6 +9,7 @@ from datacrafter.processors.base import CommonProcessor, DataPipeline, KeymapFie
 from datacrafter.cmds.project import Project
 
 
+@pytest.mark.integration
 class TestETLPipeline:
     """Integration tests for complete ETL pipeline"""
     

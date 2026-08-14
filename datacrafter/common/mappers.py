@@ -1,6 +1,7 @@
 """Data mapping and transformation utilities."""
 import datetime
 import logging
+from typing import Any, Optional
 
 from ..common.common import get_dict_value, set_dict_value
 from ..constants import DATE_PATTERNS_SHORT, DATETIME_PATTERNS
@@ -10,11 +11,11 @@ TYPE_INT = 2
 TYPE_FLOAT = 3
 
 
-date_handler = lambda obj: (
-    obj.isoformat()
-    if isinstance(obj, (datetime.datetime, datetime.date))
-    else None
-)
+def date_handler(obj):
+    """JSON default handler that serializes date/datetime as ISO-8601."""
+    if isinstance(obj, (datetime.datetime, datetime.date)):
+        return obj.isoformat()
+    return None
 
 
 def map_keys(obj, keys, qd=None):
@@ -115,30 +116,43 @@ def convert_to_date(string):
     return None
 
 
-def convert_to_int(string):
-    """String to integer. #FIXME """
-    if len(string) == 0: return None
-    try:
-        return int(string)
-    except (ValueError, TypeError) as e:
-        logging.info('Failed to convert to int: %s', e)
+def convert_to_int(value: Any) -> Optional[int]:
+    """Convert a value to integer; return None on failure."""
+    if value is None:
         return None
-
-
-def convert_to_float(string):
-    """String to float. #FIXME """
-    if isinstance(string, str) and len(string) == 0:
-        return None
-    if not string:
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    if isinstance(value, str) and len(value) == 0:
         return None
     try:
-        return float(string)
-    except (ValueError, TypeError) as e:
-        logging.info('Failed to convert to float: %s', e)
+        return int(value)
+    except (ValueError, TypeError) as error:
+        logging.info('Failed to convert to int: %s', error)
         return None
 
 
-def convert_to_bool(string):
+def convert_to_float(value: Any) -> Optional[float]:
+    """Convert a value to float; return None on failure."""
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return float(value)
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str) and len(value) == 0:
+        return None
+    try:
+        return float(value)
+    except (ValueError, TypeError) as error:
+        logging.info('Failed to convert to float: %s', error)
+        return None
+
+
+def convert_to_bool(string: Any) -> Any:
     """Convert a string to a boolean.
 
     Returns ``True`` for canonical truthy strings (``"1"``/``"true"``), ``False``
@@ -175,7 +189,8 @@ def map_document_fields(
     result = {}
     for key in obj.keys():
         value = obj[key]
-        if value is None: continue
+        if value is None:
+            continue
         found = False
         for fields, func in FUN_FIELDS:
             if key in fields:
@@ -231,7 +246,7 @@ def schema_to_func(schema):
 
 def simple_typemap_object(obj, schema=None):
     """Convert object fields to the selected formats using data schema.
-    
+
     #FIXME: This is very ineffective conversion function that try to detect
     data formats without knowledge. It could be much much faster.
     """

@@ -1,0 +1,23 @@
+# APIBackuper project stored under storage/. Requires the apibackuper extra.
+
+version: "1"
+project-name: apibackuper-jsonl
+project-id: example-apibackuper
+
+extractor:
+  mode: api
+  type: api
+  method: apibackuper
+  force: false
+  config:
+    follow: false
+
+processor:
+  config:
+    type: jsonl
+    autoid: true
+    error_strategy: skip
+
+destination:
+  type: file-jsonl
+  fileprefix: api

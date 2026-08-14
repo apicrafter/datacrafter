@@ -1,0 +1,24 @@
+# ZIP archive containing XML records. `tagname` is the repeating element.
+
+version: "1"
+project-name: zip-xml
+project-id: example-zip-xml
+
+extractor:
+  mode: singlefile
+  type: file-zip
+  method: url
+  force: true
+  config:
+    url: https://example.com/dump.zip
+
+processor:
+  config:
+    type: zipxml
+    tagname: item
+    autotype: true
+    error_strategy: skip
+
+destination:
+  type: file-jsonl
+  fileprefix: items

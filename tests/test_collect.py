@@ -113,6 +113,65 @@ class TestFetchUrlContent:
         _, kwargs = fetch_mock.call_args
         assert kwargs.get("verify_tls") is False
 
+    def test_get_file_retries_then_succeeds(self, temp_output, monkeypatch):
+        import requests as requests_mod
+        calls = {'n': 0}
+
+        def flaky(*_args, **_kwargs):
+            calls['n'] += 1
+            if calls['n'] < 2:
+                raise requests_mod.exceptions.ConnectionError('temp fail')
+            return _FakeResponse()
+
+        monkeypatch.setattr(collect.time, 'sleep', lambda _s: None)
+        monkeypatch.setattr(collect.requests, 'get', flaky)
+        collect.get_file('https://example.com/data', temp_output)
+        assert calls['n'] == 2
+        assert os.path.exists(temp_output)
+
+    def test_get_file_by_pattern_downloads_matching_link(
+            self, tmp_path, monkeypatch):
+        html = (
+            b'<html><a href="data-2026.csv">csv</a>'
+            b'<a href="other.json">json</a></html>'
+        )
+        downloaded = {}
+
+        def fake_get(url, filename, **_kwargs):
+            downloaded['url'] = url
+            downloaded['filename'] = filename
+            with open(filename, 'wb') as file_obj:
+                file_obj.write(b'id,name\n')
+            return filename
+
+        monkeypatch.setattr(
+            collect, '_fetch_url_content', lambda *_a, **_k: html)
+        monkeypatch.setattr(collect, 'get_file', fake_get)
+        out = str(tmp_path / 'out.csv')
+        result = collect.get_file_by_pattern(
+            str(tmp_path), str(tmp_path), 'https://example.com/list',
+            'data-', out, file_type='csv', force=True)
+        assert result == out
+        assert downloaded['url'] == 'https://example.com/data-2026.csv'
+
+    def test_get_file_by_name_joins_relative_href(
+            self, tmp_path, monkeypatch):
+        html = b'<html><a href="files/data.csv">dataset</a></html>'
+        monkeypatch.setattr(
+            collect, '_fetch_url_content', lambda *_a, **_k: html)
+
+        def fake_get(url, filename, **_kwargs):
+            with open(filename, 'wb') as file_obj:
+                file_obj.write(b'ok')
+            return filename
+
+        monkeypatch.setattr(collect, 'get_file', fake_get)
+        result = collect.get_file_by_name(
+            str(tmp_path), str(tmp_path), 'https://example.com/page',
+            name='dataset', file_prefix='gov', file_type='csv')
+        assert result.endswith('gov_current.csv')
+        assert os.path.exists(result)
+
 
 class TestLoadConfigSafe:
     def test_load_config_uses_safe_load(self, tmp_path):

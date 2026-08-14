@@ -6,8 +6,8 @@ except ImportError:
     HAS_BSON = False
     bson = None
 
-from .base import BaseFileSource
 from .._registry import register_source
+from .base import BaseFileSource
 
 
 @register_source("bson")

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Project state management module."""
-import os
-from json import load, dumps
 import logging
+import os
+from json import dumps, load
 
 
 class ProjectState:

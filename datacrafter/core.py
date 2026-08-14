@@ -3,20 +3,22 @@
 """Core CLI module for datacrafter."""
 import logging
 import os
-from typing import Optional, Tuple, List
+from typing import Optional
 
 import typer
 import yaml
 
-from .cmds.project import Project
+from .cmds.project import Project, load_config
+from .common.logconfig import configure_logging
+from .common.validation import check_environment, validate_config
+from .destinations import list_destinations
+from .extractors import list_extractors
 from .extractors.base import DataCrafterConfigurationError
+from .sources import list_sources
 
-# Configure default logging - INFO level for production use
-# This can be overridden by enable_verbose() or quiet mode
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO,
-    force=False)  # Don't override if already configured
+# Default logging for `python -m datacrafter` and library imports.
+# Project.enable_logging() replaces handlers when a pipeline actually runs.
+configure_logging(logging.INFO)
 
 # Create Typer app
 app = typer.Typer(
@@ -54,8 +56,7 @@ def load_project_config(project_path: str) -> dict:
         )
 
     try:
-        with open(config_file, 'r', encoding='utf8') as file_obj:
-            return yaml.safe_load(file_obj) or {}
+        return load_config(config_file) or {}
     except yaml.YAMLError as error:
         raise ValueError(f"Invalid YAML in configuration file: {error}") from error
 
@@ -74,7 +75,9 @@ def run(
     quiet: bool = typer.Option(
         False, '--quiet', '-q', help='Quiet mode. Only show errors'),
     structured_log: bool = typer.Option(
-        False, '--structured-log', help='Use structured JSON logging')
+        False, '--structured-log', help='Use structured JSON logging'),
+    dry_run: bool = typer.Option(
+        False, '--dry-run', help='Validate and print a plan; do not extract or write')
 ):
     """Execute data pipeline"""
     if quiet:
@@ -109,6 +112,10 @@ def run(
 
     try:
         project = Project(project_path)
+        if dry_run:
+            plan = project.run(structured_log=structured_log, dry_run=True)
+            typer.echo(yaml.safe_dump(plan, sort_keys=False))
+            return
         project.run(structured_log=structured_log)
     except DataCrafterConfigurationError as error:
         typer.echo(typer.style(
@@ -140,23 +147,17 @@ def log(
     if verbose:
         enable_verbose()
 
-    project_path = get_project_path(path)
-    log_file = os.path.join(project_path, 'datacrafter.log')
-
-    if not os.path.exists(log_file):
-        typer.echo(f"Log file not found: {log_file}")
-        typer.echo("No operations have been logged yet.")
-        return
-
+    project = Project(get_project_path(path))
     try:
-        with open(log_file, 'r', encoding='utf8') as file_obj:
-            all_lines = file_obj.readlines()
-            # Show last N lines
-            recent_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
-            typer.echo("".join(recent_lines))
-    except Exception as error:
+        text = project.log(lines=lines)
+    except OSError as error:
         typer.echo(typer.style(f"Error reading log file: {error}", fg=typer.colors.RED))
         raise typer.Exit(1)
+    if text is None:
+        typer.echo(f"Log file not found: {project.logfile}")
+        typer.echo("No operations have been logged yet.")
+        return
+    typer.echo(text, nl=False)
 
 
 @app.command()
@@ -184,7 +185,7 @@ def check(
                 fg=typer.colors.GREEN, bold=True))
 
             # Check environment
-            env_issues = check_environment()
+            env_issues = check_environment(config, project_path)
             if env_issues:
                 typer.echo(typer.style(
                     "\nEnvironment issues:", fg=typer.colors.YELLOW))
@@ -203,54 +204,6 @@ def check(
     except (FileNotFoundError, ValueError) as error:
         typer.echo(typer.style(f"Error: {error}", fg=typer.colors.RED))
         raise typer.Exit(1)
-
-
-def validate_config(config: dict) -> Tuple[bool, List[str]]:
-    """Validate configuration and return (is_valid, errors)"""
-    errors = []
-
-    # Check required top-level keys
-    required_keys = ['version', 'project-name', 'extractor']
-    for key in required_keys:
-        if key not in config:
-            errors.append(f"Missing required key: '{key}'")
-
-    # Validate extractor configuration
-    if 'extractor' in config:
-        extractor = config['extractor']
-        if not isinstance(extractor, dict):
-            errors.append("'extractor' must be a dictionary")
-        else:
-            required_extractor_keys = ['mode', 'type', 'method']
-            for key in required_extractor_keys:
-                if key not in extractor:
-                    errors.append(f"Missing required extractor key: '{key}'")
-
-    # Validate processor configuration if present
-    if 'processor' in config:
-        processor = config['processor']
-        if not isinstance(processor, dict):
-            errors.append("'processor' must be a dictionary")
-
-    # Validate destination configuration if present
-    if 'destination' in config:
-        destination = config['destination']
-        if not isinstance(destination, dict):
-            errors.append("'destination' must be a dictionary")
-        elif 'type' not in destination:
-            errors.append("'destination' must have a 'type' key")
-
-    return len(errors) == 0, errors
-
-
-def check_environment() -> list[str]:
-    """Check environment and return list of issues"""
-    issues = []
-
-    # Check if required directories exist
-    # This is a basic check - more can be added
-
-    return issues
 
 
 @config_app.command("validate")
@@ -289,44 +242,64 @@ def config_validate(
 @config_app.command("schema")
 def config_schema():
     """Show expected configuration file schema"""
-    schema_example = """# datacrafter.yml - Project Configuration Schema
+    extractor_types = ', '.join(list_extractors())
+    source_types = ', '.join(list_sources())
+    dest_types = ', '.join(list_destinations())
+    schema_example = f"""# datacrafter.yml - Project Configuration Schema
 
 version: "1"                    # Configuration version
 project-name: "my-project"      # Project name
 project-id: "unique-id"         # Unique project identifier (auto-generated)
 
 extractor:
-  mode: "singlefile"            # Extraction mode: singlefile, api, code
-  type: "file-csv"              # Source type: file-csv, file-json, file-xml, api, code
-  method: "url"                 # Method: url, urlbypattern, apibackuper
+  mode: "singlefile"            # singlefile, api, code
+  type: "file-csv"              # {extractor_types}
+  method: "url"                 # url, urlbypattern, apibackuper
   force: true                   # Force re-download
   config:
     url: "https://example.com/data.csv"  # URL for url method
     # For urlbypattern:
     # prefix: "https://example.com/"
     # data_prefix: "data-"
+    # For type: code (script must live under the project directory):
+    # script: "scripts/collect.py"
+
+# Or several extractors sharing one processor/destination:
+# extractors:
+#   - name: csv
+#     mode: singlefile
+#     type: file-csv
+#     method: url
+#     config:
+#       url: "https://example.com/a.csv"
+#   - name: feed
+#     type: rss
+#     config:
+#       url: "https://example.com/feed.xml"
 
 processor:
   config:
-    autoid: true                # Auto-generate IDs
-    autotype: false            # Auto-detect types
-    error_strategy: "skip"     # Error handling: skip, fail, retry
-    max_retries: 3             # Max retries for failed records
+    # autoid / autotype are applied when true (autoid default is false)
+    autoid: true
+    autotype: false
+    error_strategy: "skip"     # skip, fail, retry
+    max_retries: 3
+    type: "csv"                # Optional reader type: {source_types}
   keymap:                      # Optional: field mapping
     type: "names"              # names or position
     fields:
       old_name: "new_name"
   typemap:                     # Optional: type conversion
     field_name: "int"          # int, float, date, datetime, bool
-  custom:                      # Optional: custom code
+  custom:                      # Optional: custom code under the project dir
     type: "script"
-    code: "path/to/script.py"
+    code: "scripts/transform.py"
 
 destination:
-  type: "file-jsonl"           # file-jsonl, file-csv, file-bson, mongodb, arangodb
-  fileprefix: "output"         # Output file prefix
-  compress: "gz"               # Optional: gz, bz2, xz, zip
-  # For databases:
+  type: "file-jsonl"           # {dest_types}
+  fileprefix: "output"         # Required for file-* destinations
+  compress: "gz"               # Optional: gz, bz2, xz, zip, zst
+  # For databases / search:
   # connstr: "mongodb://localhost:27017"
   # dbname: "mydb"
   # tablename: "mytable"
@@ -336,23 +309,37 @@ destination:
 
 @app.command()
 def init(
+    directory: Optional[str] = typer.Argument(
+        None,
+        help='Project directory to create or initialize. Default: current directory'),
     verbose: bool = typer.Option(
         False, '--verbose', '-v',
         help='Verbose output. Print additional info on command execution'),
     path: Optional[str] = typer.Option(
         None, '--path', '-p',
-        help='Project path. If not set, current directory used'),
+        help='Project path. Alternative to DIRECTORY'),
     name: Optional[str] = typer.Option(
         None, '--name', '-n',
-        help='Project name. If not set, dummy name used')
+        help='Project name. Defaults to the directory name')
 ):
     """Initialize project"""
     if verbose:
         enable_verbose()
-    project = Project(path) if path else Project()
+    if directory and path:
+        typer.echo(typer.style(
+            "Error: pass either a directory argument or --path, not both",
+            fg=typer.colors.RED))
+        raise typer.Exit(1)
+    project_path = directory or path
+    if name is None and project_path:
+        name = os.path.basename(os.path.abspath(project_path))
+    project = Project(project_path) if project_path else Project()
     project.init(name)
     typer.echo(typer.style(
         "✓ Project initialized successfully", fg=typer.colors.GREEN))
+    typer.echo(
+        "Edit datacrafter.yml to add an extractor (and optional processor/"
+        "destination), then run 'datacrafter check'.")
     typer.echo(
         "Run 'datacrafter config schema' to see configuration options.")
 
@@ -464,16 +451,56 @@ def ui(
 
 @app.command()
 def schema(
-    verbose: bool = typer.Option(
-        False, '--verbose', '-v',
-        help='Verbose output. Print additional info on command execution')
+    path: Optional[str] = typer.Option(
+        None, '--path', '-p',
+        help='Project path. If not set, current directory used')
 ):
-    """Generates and/or prints generated data schema (not yet)"""
-    if verbose:
-        enable_verbose()
-    typer.echo(typer.style(
-        "Schema command not yet implemented", fg=typer.colors.YELLOW))
-    typer.echo("This feature is planned for a future release.")
+    """Print inferred field types from project JSONL output."""
+    from .common.infer import analyze_records, iter_jsonl_path, project_jsonl_files
+
+    project_path = get_project_path(path)
+    files = project_jsonl_files(project_path)
+    if not files:
+        typer.echo(
+            "No JSONL files found in output/ or current/. "
+            "Run the pipeline first.")
+        raise typer.Exit(1)
+
+    def records():
+        for filename in files:
+            yield from iter_jsonl_path(filename)
+
+    field_types, _metrics = analyze_records(records())
+    typer.echo(yaml.safe_dump({
+        'files': files,
+        'fields': field_types,
+    }, sort_keys=False))
+
+
+@app.command()
+def metrics(
+    path: Optional[str] = typer.Option(
+        None, '--path', '-p',
+        help='Project path. If not set, current directory used')
+):
+    """Print record counts and field histograms from project JSONL output."""
+    from .common.infer import analyze_records, iter_jsonl_path, project_jsonl_files
+
+    project_path = get_project_path(path)
+    files = project_jsonl_files(project_path)
+    if not files:
+        typer.echo(
+            "No JSONL files found in output/ or current/. "
+            "Run the pipeline first.")
+        raise typer.Exit(1)
+
+    def records():
+        for filename in files:
+            yield from iter_jsonl_path(filename)
+
+    _types, report = analyze_records(records())
+    report['files'] = files
+    typer.echo(yaml.safe_dump(report, sort_keys=False))
 
 
 @app.command()
@@ -508,20 +535,6 @@ def version():
     """Show this tool version"""
     from datacrafter import __version__  # pylint: disable=import-outside-toplevel
     typer.echo(f'datacrafter version {__version__}')
-
-
-@app.command()
-def metrics(
-    verbose: bool = typer.Option(
-        False, '--verbose', '-v',
-        help='Verbose output. Print additional info on command execution')
-):
-    """Metrics of the dataset (stats, datatypes, analysis results) (not yet)"""
-    if verbose:
-        enable_verbose()
-    typer.echo(typer.style(
-        "Metrics command not yet implemented", fg=typer.colors.YELLOW))
-    typer.echo("This feature is planned for a future release.")
 
 
 def cli():

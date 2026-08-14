@@ -7,9 +7,11 @@ except ImportError:
     HAS_PYCOUCHDB = False
     pycouchdb = None
 
+from .._registry import register_destination
 from .base import BaseDBDestination
 
 
+@register_destination("couchdb")
 class CouchDBDestination(BaseDBDestination):
     """CouchDB Destination"""
     def __init__(self, connstr, dbname, tablename, username=None, password=None):

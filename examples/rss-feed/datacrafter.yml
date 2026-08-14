@@ -1,0 +1,20 @@
+# RSS/Atom feed → JSONL. Set download_enclosures: true to fetch enclosure files.
+
+version: "1"
+project-name: rss-feed
+project-id: example-rss
+
+extractor:
+  type: rss
+  config:
+    url: https://example.com/feed.xml
+    download_enclosures: false
+
+processor:
+  config:
+    type: jsonl
+    autotype: true
+
+destination:
+  type: file-jsonl
+  fileprefix: items

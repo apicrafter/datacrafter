@@ -1,8 +1,8 @@
 """CSV destination module."""
 from csv import DictWriter
 
-from .base import BaseFileDestination
 from .._registry import register_destination
+from .base import BaseFileDestination
 
 
 @register_destination("file-csv")
@@ -45,7 +45,9 @@ class CSVDestination(BaseFileDestination):
     def write_bulk(self, records):
         """Write bulk CSV records"""
         records = list(records)
-        if self.writer is None and records:
+        if not records:
+            return
+        if self.writer is None:
             self.keys = list(records[0].keys())
             self.writer = DictWriter(
                 self.fobj, fieldnames=self.keys, delimiter=self.delimiter,

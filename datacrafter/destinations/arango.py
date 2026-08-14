@@ -7,8 +7,8 @@ except ImportError:
     HAS_ARANGO = False
     ArangoClient = None
 
-from .base import BaseDBDestination
 from .._registry import register_destination
+from .base import BaseDBDestination
 
 
 @register_destination("arangodb")

@@ -5,14 +5,12 @@
 import logging
 import sys
 
+from .common.logconfig import configure_logging
+
 
 def main():
     """Main entry point for datacrafter CLI."""
-    # Configure basic logging for startup errors
-    logging.basicConfig(
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        level=logging.WARNING  # Only show warnings/errors during startup
-    )
+    configure_logging(logging.WARNING)
 
     try:
         from .core import cli  # pylint: disable=import-outside-toplevel

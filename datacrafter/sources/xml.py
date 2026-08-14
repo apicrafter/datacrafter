@@ -6,9 +6,9 @@ except ImportError:
     HAS_LXML = False
     etree = None
 
-from .base import BaseFileSource
 from .._registry import register_source
 from ..common.converters import etree_to_dict
+from .base import BaseFileSource
 
 
 @register_source("xml")

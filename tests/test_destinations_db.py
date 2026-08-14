@@ -13,6 +13,8 @@ from datacrafter.destinations.arango import ArangoDBDestination
 from datacrafter.destinations.couchdb import CouchDBDestination
 from datacrafter.destinations.meilisearch import MeilisearchDestination
 
+pytestmark = pytest.mark.backend
+
 
 class TestMongoDBDestination:
     """MongoDB destination write path, mocked."""

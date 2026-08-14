@@ -1,8 +1,8 @@
 """JSON source module."""
 import json
 
-from .base import BaseFileSource
 from .._registry import register_source
+from .base import BaseFileSource
 
 
 @register_source("json")

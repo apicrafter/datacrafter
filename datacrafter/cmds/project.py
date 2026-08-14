@@ -1,20 +1,35 @@
 # -*- coding: utf-8 -*-
 """Project command module for managing datacrafter projects."""
-import os
-import shutil
 import errno
 import logging
+import os
+import shutil
 import uuid
 
 import yaml
 
 # Project imports
-from ..constants import DEFAULT_BULK_RECORDS
-from ..extractors.base import BaseExtractor
-from ..processors.base import CommonProcessor
+from ..common.datapackage import write_datapackage
+from ..common.env import interpolate_env
 from ..common.state import ProjectState
-from ..sources import get_source_from_file
+from ..common.validation import extractor_specs, validate_config
+from ..constants import DEFAULT_BULK_RECORDS
 from ..destinations import get_destination_from_config
+from ..extractors import get_extractor
+from ..processors.base import CommonProcessor
+from ..sources import get_source_from_file
+
+
+def _plan_extractor(spec):
+    """Summarize one extractor spec for a dry-run plan."""
+    spec = spec or {}
+    return {
+        'name': spec.get('name'),
+        'type': spec.get('type'),
+        'method': spec.get('method'),
+        'mode': spec.get('mode'),
+        'url': (spec.get('config') or {}).get('url'),
+    }
 
 
 def load_config(filename):
@@ -25,7 +40,7 @@ def load_config(filename):
     """
     with open(filename, 'r', encoding='utf8') as file_obj:
         data = yaml.safe_load(file_obj)
-    return data
+    return interpolate_env(data) if data is not None else {}
 
 
 def remove_dir_contents(dirpath, debug=False):
@@ -72,7 +87,7 @@ class Project:
 
         # Preserve the current effective level (may be set to DEBUG for verbose mode)
         current_level = rootLogger.getEffectiveLevel()
-        
+
         # Remove existing handlers to avoid duplicates
         rootLogger.handlers.clear()
 
@@ -183,9 +198,14 @@ class Project:
 
 
 
-    def log(self):
-        """Log project information. FIXME: Logging outside system logging."""
-        pass
+    def log(self, lines=50):
+        """Return the last ``lines`` of ``datacrafter.log``, or None if missing."""
+        if not os.path.exists(self.logfile):
+            return None
+        with open(self.logfile, 'r', encoding='utf8') as file_obj:
+            all_lines = file_obj.readlines()
+        recent = all_lines[-lines:] if len(all_lines) > lines else all_lines
+        return ''.join(recent)
 
     def clean(self, _basepath=None, clean_storage=False):
         """Clean project temporary files and optionally storage directory."""
@@ -207,15 +227,25 @@ class Project:
             remove_dir_contents(os.path.join(self.project_path, 'storage'), debug=True)
 
     def validate(self):
-        """Validates project file #FIXME returns always True for now"""
-    #        raise
+        """Validate the loaded project configuration.
+
+        Returns ``(True, None)`` when the config is usable, or
+        ``(False, report)`` with a newline-joined error report.
+        """
+        if self.project is None:
+            return False, 'Project file not found or not loaded'
+        is_valid, errors = validate_config(self.project)
+        if not is_valid:
+            return False, '\n'.join(errors)
         return True, None
 
     def prepare(self):
         """Prepares everything"""
         logging.info('Preparing project extract, processor and destination')
-        self.extractor = BaseExtractor(self)
-        logging.info('Extractor class %s', self.extractor.__class__)
+        specs = extractor_specs(self.project)
+        first = specs[0] if specs else None
+        self.extractor = get_extractor(self, extractor=first) if first else None
+        logging.info('Extractor class %s', self.extractor.__class__ if self.extractor else None)
         self.processor = CommonProcessor(self)
         logging.info('Processor class %s', self.processor.__class__)
         self.destination = None
@@ -233,12 +263,47 @@ class Project:
             if stage['name'] == 'extractor' and stage['status'] == 'success':
                 logging.info('Skip extractor stage')
                 return
+        combined = []
+        extractor = None
         try:
-            self.extractor.run()
+            for spec in extractor_specs(self.project):
+                extractor = get_extractor(self, extractor=spec)
+                extractor.run(update_state=False)
+                combined.extend(extractor.results or [])
+            if extractor is not None:
+                self.extractor = extractor
+                self.extractor.results = combined
         except Exception as error:
             logging.error('Extractor failed: %s', error)
             logging.error('Check your extractor configuration and network connectivity')
+            self.state.add('extractor', status='fail', results=combined)
             raise
+        status = 'fail' if not combined else 'success'
+        self.state.add('extractor', status=status, results=combined)
+
+    def finish(self):
+        """Executed on end of the project. Ensures destination is closed"""
+        # Ensure destination is closed if not already closed
+        if self.destination is not None:
+            try:
+                self.destination.close()
+                logging.info('Destination closed in finish()')
+            except Exception as error:
+                logging.warning('Error closing destination in finish(): %s', error)
+        dest_cfg = self.project.get('destination') or {}
+        if (
+                dest_cfg.get('datapackage', True)
+                and str(dest_cfg.get('type', '')).startswith('file-')
+                and self.destination is not None):
+            try:
+                written = write_datapackage(
+                    self.output, self.destination,
+                    project_name=self.project.get('project-name'))
+                if written:
+                    logging.info('Wrote data package %s', written)
+            except Exception as error:
+                logging.warning('Could not write datapackage.json: %s', error)
+        logging.info("Finished project: %s", self.project['project-name'])
 
     def process(self):
         """Runs processors and stores result at the destination"""
@@ -313,20 +378,55 @@ class Project:
                 except Exception as error:
                     logging.warning('Error closing destination: %s', error)
 
-    def finish(self):
-        """Executed on end of the project. Ensures destination is closed"""
-        # Ensure destination is closed if not already closed
-        if self.destination is not None:
-            try:
-                self.destination.close()
-                logging.info('Destination closed in finish()')
-            except Exception as error:
-                logging.warning('Error closing destination in finish(): %s', error)
-        logging.info("Finished project: %s", self.project['project-name'])
+    def plan(self):
+        """Return a dry-run plan without extracting or writing."""
+        if self.project is None:
+            raise ValueError('Project file not found or not loaded')
+        isvalid, report = self.validate()
+        if not isvalid:
+            raise ValueError(f'Invalid configuration. {report if report else ""}')
+        specs = extractor_specs(self.project)
+        first = specs[0] if specs else {}
+        processor = self.project.get('processor') or {}
+        proc_config = processor.get('config') or {}
+        destination = self.project.get('destination') or {}
+        current_files = []
+        if os.path.isdir(self.current):
+            current_files = sorted(
+                name for name in os.listdir(self.current)
+                if not name.startswith('.'))
+        estimated = None
+        for name in current_files:
+            if name.endswith('.jsonl'):
+                path = os.path.join(self.current, name)
+                with open(path, 'r', encoding='utf8') as file_obj:
+                    estimated = sum(1 for line in file_obj if line.strip())
+                break
+        dest_type = destination.get('type')
+        return {
+            'project-name': self.project.get('project-name'),
+            'extractor': _plan_extractor(first),
+            'extractors': [_plan_extractor(spec) for spec in specs],
+            'processor': {
+                'autoid': bool(proc_config.get('autoid', False)),
+                'autotype': bool(proc_config.get('autotype', False)),
+                'error_strategy': proc_config.get('error_strategy', 'skip'),
+                'keymap': 'keymap' in processor,
+                'typemap': 'typemap' in processor,
+            },
+            'destination': {
+                'type': dest_type,
+                'fileprefix': destination.get('fileprefix'),
+            },
+            'current_files': current_files,
+            'estimated_records': estimated,
+            'will_write': False,
+        }
 
-    def run(self, pre_clean=False, init=True, proceed=True, structured_log=False):
+    def run(self, pre_clean=False, init=True, proceed=True, structured_log=False,
+            dry_run=False):
         """Execute project"""
-        self.enable_logging(console=True, tofile=True, structured=structured_log)
+        self.enable_logging(console=True, tofile=not dry_run, structured=structured_log)
         if self.project is None:
             error_msg = 'Project file not found or not loaded'
             logging.error(error_msg)
@@ -339,6 +439,8 @@ class Project:
             if report:
                 logging.error('Validation report: %s', report)
             raise ValueError(f"{error_msg}. {report if report else ''}")
+        if dry_run:
+            return self.plan()
         if init:
             self.__create_dirs()
         if pre_clean:

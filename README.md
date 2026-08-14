@@ -6,14 +6,17 @@
 
 ## Features
 
-- **NoSQL-first approach**: JSON Lines and BSON are default file formats
-- **Task chaining and data pipelines**: Build complex ETL workflows
-- **Command-line first**: Full CLI interface for automation and scripting
-- **Automated data extraction**: Extract data from APIs, files, and web sources
-- **Semantic type identification**: Automatic data type detection and conversion
-- **Automatic documentation generation**: Generate documentation for your data pipelines
-- **Data discovery**: Discover data formats and possible transformations
-- **Multiple source and destination formats**: Support for various file formats and databases
+- **NoSQL-first**: JSON Lines and BSON are the native intermediate formats
+- **CLI-first YAML projects**: declare extract → process → load in `datacrafter.yml`
+- **File and URL extraction**: CSV, JSON, JSONL, XML, XLS/XLSX, ZIP+XML, patterned HTML indexes, RSS/Atom, DCAT catalogs, APIBackuper, trusted Python `collect()` scripts
+- **Record transforms**: `keymap`, `typemap`, custom Python `process(record)`, plus optional `autotype` (sample-based type inference) and `autoid` (stable `_id`)
+- **Inspect**: `datacrafter schema` and `datacrafter metrics` read JSONL in `output/` (or `current/`)
+- **Dry-run**: `datacrafter run --dry-run` validates config and prints a plan without downloading or writing
+- **Destinations**: JSONL, BSON, CSV, Parquet (optional `pyarrow`), MongoDB, ArangoDB, CouchDB, Meilisearch
+- **Open-data packaging**: `datapackage.json` beside file output; `${MONGO_URI}` / `${VAR:-default}` in YAML
+- **Multiple extractors**: `extractors:` list sharing one processor and destination
+
+Reserved in CLI but **not implemented yet**: `builds` / `push` / `ui`, automatic docs generation.
 
 ## Installation
 
@@ -33,7 +36,7 @@ pip install -e .
 
 ### Requirements
 
-- Python 3.8 or higher
+- Python 3.9 or higher
 - See [requirements.txt](requirements.txt) for full dependency list
 
 ## Quick Start
@@ -65,8 +68,9 @@ extractor:
 
 processor:
   config:
-    autoid: true
     autotype: true
+    autoid: true
+    error_strategy: "skip"
   keymap:
     type: "names"
     fields:
@@ -81,6 +85,9 @@ destination:
 
 ```bash
 datacrafter run
+datacrafter run --dry-run
+datacrafter schema
+datacrafter metrics
 ```
 
 ### 4. Check Status
@@ -93,12 +100,14 @@ datacrafter status
 
 ### Main Commands
 
-- `datacrafter init [--path PATH] [--name NAME]` - Initialize a new project
-- `datacrafter run [--path PATH] [--verbose] [--quiet]` - Execute the data pipeline
+- `datacrafter init [DIRECTORY] [--path PATH] [--name NAME]` - Initialize a new project
+- `datacrafter run [--path PATH] [--verbose] [--quiet] [--dry-run]` - Execute the data pipeline (or print a plan)
 - `datacrafter status [--path PATH]` - Show status of latest pipeline execution
 - `datacrafter check [--path PATH]` - Validate configuration and environment
 - `datacrafter clean [--path PATH] [--storage]` - Remove temporary files
 - `datacrafter log [--path PATH] [--lines N]` - Show log of latest operations
+- `datacrafter schema [--path PATH]` - Infer field types from output JSONL
+- `datacrafter metrics [--path PATH]` - Record counts and field histograms
 - `datacrafter version` - Show version information
 
 ### Configuration Commands
@@ -108,8 +117,6 @@ datacrafter status
 
 ### Planned Commands
 
-- `datacrafter schema` - Generate and print data schema
-- `datacrafter metrics` - Show dataset statistics and analysis
 - `datacrafter builds` - Manage builds (create, remove, list)
 - `datacrafter push` - Push data to remote storage
 - `datacrafter ui` - Launch web user interface
@@ -120,18 +127,15 @@ datacrafter status
 
 Extractors pull data from various sources:
 
-- **Local or remote files**: CSV, JSON, XML, XLS/XLSX, BSON, JSONL
-- **APIs**:
-  - REST API (Work in progress)
-  - APIBackuper compatible (Done)
-  - RSS/Atom Feed (Work in progress)
-- **CMS**:
-  - WordPress (Work in progress)
-  - Microsoft SharePoint (Planned)
-- **Common APIs** (Planned):
-  - Email, FTP, SFTP
-- **Online services** (Planned):
-  - Yandex Metrika, Yandex.Webmaster
+- **Local or remote files**: CSV, JSON, XML, XLS/XLSX, BSON, JSONL, ZIP
+- **APIs and catalogs**:
+  - APIBackuper ✅
+  - RSS/Atom feeds ✅
+  - DCAT catalogs ✅
+  - REST API (generic HTTP beyond URL/file download: Work in progress)
+- **CMS** (Planned): WordPress, Microsoft SharePoint
+- **Common APIs** (Planned): Email, FTP, SFTP
+- **Online services** (Planned): Yandex Metrika, Yandex.Webmaster
 
 ### Sources
 
@@ -143,7 +147,7 @@ Sources are files or databases created by extractors:
 - BSON ✅
 - XLS/XLSX ✅
 - XML ✅
-- JSON (Work in progress)
+- JSON ✅
 - YAML (Work in progress)
 - SQLite (Work in progress)
 
@@ -159,7 +163,7 @@ Processors transform data during the pipeline:
 - **Mappers**: Map data fields from one schema to another
   - `keymap`: Replace key/column names ✅
   - `typemap`: Convert data types ✅
-- **Custom code**: Python scripts for data manipulation ✅
+- **Custom code**: Python scripts under the project directory ✅
 - **Custom tools**: Command-line tools for data manipulation (Work in progress)
 - **Enrichers**: Data and metadata enrichment (Planned)
 
@@ -171,14 +175,16 @@ Destinations store the processed data:
 - BSON ✅
 - JSON Lines ✅
 - CSV ✅
-- Parquet (Work in progress)
+- Parquet ✅
+- Frictionless Data Package (`datapackage.json` beside file output) ✅
 - JSON (Work in progress)
 - YAML (Planned)
-- DataPackage/Frictionless Data (Planned)
 
 **Database Destinations:**
-- MongoDB (Work in progress)
-- ArangoDB (Planned)
+- MongoDB ✅
+- ArangoDB ✅
+- CouchDB ✅
+- Meilisearch ✅
 - ClickHouse (Planned)
 - Any SQL via SQLAlchemy (Planned)
 
@@ -202,7 +208,7 @@ A datacrafter project typically has this structure:
 ```
 my-project/
 ├── datacrafter.yml      # Project configuration
-├── data/                # Extracted data
+├── current/             # Extracted data
 ├── output/              # Processed output
 ├── state.json           # Execution state
 └── datacrafter.log      # Execution logs
@@ -233,8 +239,6 @@ extractor:
 
 processor:
   config:
-    autoid: true               # Auto-generate IDs
-    autotype: false            # Auto-detect types
     error_strategy: "skip"     # skip, fail, retry
     max_retries: 3
   keymap:                      # Optional field mapping
@@ -248,14 +252,14 @@ processor:
     code: "path/to/script.py"
 
 destination:
-  type: "file-jsonl"           # file-jsonl, file-csv, file-bson, mongodb, etc.
+  type: "file-jsonl"           # file-jsonl, file-csv, file-bson, file-parquet, mongodb, arangodb, couchdb, meilisearch
   fileprefix: "output"
   compress: "gz"               # Optional: gz, bz2, xz, zip, zst
 ```
 
 ## Examples
 
-For complete examples, see: https://github.com/apicrafter/datacrafter-examples
+Starter `datacrafter.yml` recipes live in [`examples/`](examples/README.md) (CSV URL, Excel, ZIP+XML, APIBackuper, RSS, DCAT). More recipes: https://github.com/apicrafter/datacrafter-examples
 
 ### Example: Extract CSV and Convert to JSONL
 
@@ -273,8 +277,7 @@ extractor:
 
 processor:
   config:
-    autoid: true
-    autotype: true
+    error_strategy: "skip"
 
 destination:
   type: "file-jsonl"
@@ -296,8 +299,6 @@ extractor:
     endpoint: "https://api.example.com/data"
 
 processor:
-  config:
-    autoid: true
   keymap:
     type: "names"
     fields:
@@ -320,7 +321,7 @@ destination:
 pip install -r requirements-dev.txt
 pip install -e .
 
-# Run the test suite with coverage (enforces a 40% floor in .coveragerc)
+# Run the test suite with coverage (enforces a 50% floor in .coveragerc)
 pytest
 
 # Audit dependencies for known vulnerabilities
@@ -333,8 +334,8 @@ pip-audit -r requirements.txt
 # Linting with pylint
 pylint datacrafter/
 
-# Linting with flake8
-flake8 datacrafter/
+# Linting with ruff (also run via pre-commit)
+ruff check datacrafter tests
 
 # Type checking (if using mypy)
 mypy datacrafter/
@@ -373,9 +374,11 @@ testing, linting, branching conventions, and the pull-request process.
 ## Security
 
 **Trust model.** Datacrafter runs configuration files (`datacrafter.yml`) and
-`code`-type extractor scripts as **trusted** input — these can execute arbitrary
-Python (via `runpy`) and should only come from a source you control. URLs, filenames,
+`code`-type extractor / custom processor scripts as **trusted** input — these can
+execute arbitrary Python (via `runpy`) and should only come from a source you
+control. Scripts MUST resolve inside the project directory. URLs, filenames,
 and downloaded data are treated as **untrusted** and are never passed to a shell.
+Secrets belong in the environment (`connstr: ${MONGO_URI}`), not in committed YAML.
 
 - TLS certificate verification is **enabled by default** for all HTTPS downloads.
   Disable it only for trusted endpoints with a known self-signed cert (a warning is

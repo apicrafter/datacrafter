@@ -258,5 +258,23 @@ class TestCompressionTypes:
         assert os.path.exists(expected_file)
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+class TestGetCompressionValue:
+    """Tests for get_compression_value helper."""
+
+    def test_compress_key(self):
+        from datacrafter.destinations import get_compression_value
+        assert get_compression_value({'compress': 'gz'}) == 'gz'
+
+    def test_compression_key(self):
+        from datacrafter.destinations import get_compression_value
+        assert get_compression_value({'compression': 'zst'}) == 'zst'
+
+    def test_neither_key(self):
+        from datacrafter.destinations import get_compression_value
+        assert get_compression_value({'type': 'file-jsonl'}) is None
+
+    def test_compression_wins(self):
+        from datacrafter.destinations import get_compression_value
+        assert get_compression_value(
+            {'compress': 'gz', 'compression': 'bz2'}) == 'bz2'
+

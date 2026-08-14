@@ -1,8 +1,8 @@
 """JSON Lines source module."""
 from json import loads
 
-from .base import BaseFileSource
 from .._registry import register_source
+from .base import BaseFileSource
 
 
 @register_source("jsonl")

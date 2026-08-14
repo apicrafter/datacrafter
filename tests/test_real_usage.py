@@ -12,6 +12,8 @@ import pytest
 from datacrafter.processors.base import CommonProcessor
 from datacrafter.sources import get_source_from_file
 
+pytestmark = pytest.mark.integration
+
 
 class _MockProject:
     """Minimal project stand-in exposing a processor config."""

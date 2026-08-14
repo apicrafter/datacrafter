@@ -2,8 +2,7 @@
 """Source modules for reading data from various file formats."""
 import logging
 
-from .._registry import (
-    UnknownSourceTypeError, get_source_class, list_sources)
+from .._registry import UnknownSourceTypeError, get_source_class, list_sources
 from .bsonf import BSONSource
 from .csv import CSVSource
 from .json import JSONSource
@@ -19,6 +18,15 @@ __all__ = [
     "get_source_class",
     "list_sources",
     "get_source_from_file",
+    "BSONSource",
+    "CSVSource",
+    "JSONSource",
+    "JSONLinesSource",
+    "XLSSource",
+    "XLSXSource",
+    "XMLSource",
+    "ZIPSourceWrapper",
+    "ZIPXMLSource",
 ]
 
 
@@ -50,7 +58,7 @@ FILEEXT_TO_SOURCETYPE = {
     'json': 'json'
 }
 
-COMPRESSED_EXTENSIONS = ['gz', 'bz2', 'xz', 'zip', 'zst']
+COMPRESSED_EXTENSIONS = ['gz', 'bz2', 'xz', 'zst']
 
 # Try to import compression libraries
 try:
@@ -92,6 +100,8 @@ def open_compressed_file(filename, mode='rt', encoding='utf-8'):
 
 
 def get_source_from_file(filename, stype=None, options=None):
+    if options is None:
+        options = {}
     logging.info(
         'Getting source from extractor results, filename: %s stype: %s, '
         'options: %s',
@@ -101,7 +111,6 @@ def get_source_from_file(filename, stype=None, options=None):
     parts = filename.rsplit('.', 2)
     is_compressed = False
     compression_ext = None
-    actual_filename = filename
 
     if len(parts) >= 2 and parts[-1].lower() in COMPRESSED_EXTENSIONS:
         is_compressed = True
@@ -139,65 +148,50 @@ def get_source_from_file(filename, stype=None, options=None):
                 'Failed to open compressed file %s: %s', filename, error)
             raise
 
+    cls = get_source_class(stype)
+
     if stype == 'zipxml':
         validate_options(options, ['tagname', ])
         logging.debug(
             'Use ZIP XML source with filename %s, tag %s',
             filename, options['tagname'])
-        return ZIPXMLSource(filename=filename, tagname=options['tagname'])
-    elif stype == 'xml':
+        return cls(filename=filename, tagname=options['tagname'])
+    if stype == 'xml':
         validate_options(options, ['tagname', ])
         logging.debug(
             'Use XML source with filename %s, tag %s',
             filename, options['tagname'])
-        return XMLSource(filename=filename, tagname=options['tagname'])
-    elif stype == 'json':
-        #        validate_options(options, ['tagname', ])
-        tagname_val = options['tagname'] if 'tagname' in options.keys() else 'None'
+        return cls(filename=filename, tagname=options['tagname'])
+    if stype == 'json':
+        tagname = options['tagname'] if 'tagname' in options else None
         logging.debug(
-            'Use JSON source with filename %s, tag %s', filename, tagname_val)
-        tagname = (
-            options['tagname'] if 'tagname' in options.keys() else None)
-        return JSONSource(filename=filename, tagname=tagname)
-    elif stype == 'xls':
+            'Use JSON source with filename %s, tag %s', filename, tagname)
+        return cls(filename=filename, tagname=tagname)
+    if stype in ('xls', 'xlsx'):
         validate_options(options, ['keys', ])
-        if 'keys' in options.keys() and options['keys']:
-            keys = options['keys'].split(',')
-        else:
-            keys = None
-        logging.debug('Use XLS source with filename %s, keys %s', filename, keys)
-        start_line = (
-            options['start_line'] if 'start_line' in options.keys() else 0)
-        return XLSSource(filename=filename, keys=keys, start_line=start_line)
-    elif stype == 'xlsx':
-        validate_options(options, ['keys', ])
-        if 'keys' in options.keys() and options['keys']:
-            keys = options['keys'].split(',')
-        else:
-            keys = None
+        keys = options['keys'].split(',') if options.get('keys') else None
+        start_line = options['start_line'] if 'start_line' in options else 0
         logging.debug(
-            'Use XLSX source with filename %s, keys %s', filename, keys)
-        return XLSXSource(filename=filename, keys=keys,
-                          start_line=start_line)
-    elif stype == 'csv':
-        keys = options['keys'].split(',') if 'keys' in options.keys() else None
-        delimiter = options['delimiter'] if 'delimiter' in options.keys() else None
-        encoding = options['encoding'] if 'encoding' in options.keys() else None
-        logging.debug('Use CSV source with filename %s, keys %s, delimiter "%s", encoding %s',
-                      filename, keys, delimiter, encoding)
-        return CSVSource(filename=filename, keys=keys,
-                         delimiter=delimiter,
-                         encoding=encoding)
-    elif stype == 'bson':
+            'Use %s source with filename %s, keys %s',
+            stype.upper(), filename, keys)
+        return cls(filename=filename, keys=keys, start_line=start_line)
+    if stype == 'csv':
+        keys = options['keys'].split(',') if 'keys' in options else None
+        delimiter = options['delimiter'] if 'delimiter' in options else None
+        encoding = options['encoding'] if 'encoding' in options else None
+        logging.debug(
+            'Use CSV source with filename %s, keys %s, delimiter "%s", encoding %s',
+            filename, keys, delimiter, encoding)
+        return cls(
+            filename=filename, keys=keys, delimiter=delimiter, encoding=encoding)
+    if stype == 'bson':
         logging.debug('Use BSON source with filename %s', filename)
-        return BSONSource(filename=filename)
-    elif stype == 'jsonl':
+        return cls(filename=filename)
+    if stype == 'jsonl':
         logging.debug('Use JSON lines source with filename %s', filename)
         if file_stream:
-            return JSONLinesSource(stream=file_stream)
-        else:
-            return JSONLinesSource(filename=filename)
-    else:
-        raise UnknownSourceTypeError(
-            f"Unknown source type {stype!r}. "
-            f"Registered source types: {list_sources()}")
+            return cls(stream=file_stream)
+        return cls(filename=filename)
+    raise UnknownSourceTypeError(
+        f"Unknown source type {stype!r}. "
+        f"Registered source types: {list_sources()}")

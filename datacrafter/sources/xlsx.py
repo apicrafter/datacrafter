@@ -6,8 +6,8 @@ except ImportError:
     HAS_OPENPYXL = False
     load_workbook = None
 
-from .base import BaseFileSource
 from .._registry import register_source
+from .base import BaseFileSource
 
 
 @register_source("xlsx")
@@ -29,7 +29,10 @@ class XLSXSource(BaseFileSource):
     def reset(self):
         super().reset()
         self.workbook = load_workbook(self.filename)
-        self.sheet = self.workbook.active
+        if isinstance(self.page, str):
+            self.sheet = self.workbook[self.page]
+        else:
+            self.sheet = self.workbook.worksheets[self.page]
         self.pos = self.start_line
         self.iter = self.sheet.iter_rows()
         if self.pos > 1:

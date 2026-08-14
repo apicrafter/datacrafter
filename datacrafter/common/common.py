@@ -1,5 +1,10 @@
 """Common utility functions for dictionary operations."""
-def get_dict_value(adict, key, prefix=None):
+from typing import Any, Dict, List, Optional, Union
+
+Nested = Union[Dict[str, Any], List[Any]]
+
+
+def get_dict_value(adict: dict, key: str, prefix: Optional[list] = None) -> Any:
     """Get value from nested dictionary using dot-separated key path."""
     if prefix is None:
         prefix = key.split('.')
@@ -9,13 +14,14 @@ def get_dict_value(adict, key, prefix=None):
 
 
 def get_dict_value_deep(
-        adict, key, prefix=None, as_array=False, splitter='.'):
+        adict: Nested, key: str, prefix: Optional[list] = None,
+        as_array: bool = False, splitter: str = '.') -> Any:
     """Get value from hierarchical dicts in python with params with dots as splitter"""
     if prefix is None:
         prefix = key.split(splitter)
     if len(prefix) == 1:
         if isinstance(adict, dict):
-            if not prefix[0] in adict.keys():
+            if prefix[0] not in adict.keys():
                 return None
             if as_array:
                 return [adict[prefix[0]], ]
@@ -49,7 +55,8 @@ def get_dict_value_deep(
 
 
 def set_dict_value(
-        adict, key, value, prefix=None, splitter='.', build_path=True):
+        adict: Nested, key: str, value: Any, prefix: Optional[list] = None,
+        splitter: str = '.', build_path: bool = True) -> Any:
     """Set value in hierarchical dicts in python with params with dots as splitter"""
     if prefix is None:
         prefix = key.split(splitter)
@@ -58,7 +65,7 @@ def set_dict_value(
             adict[prefix[0]] = value
         return adict
     if isinstance(adict, dict):
-        if build_path and not prefix[0] in adict.keys():
+        if build_path and prefix[0] not in adict.keys():
             adict[prefix[0]] = {}
         adict[prefix[0]] = set_dict_value(
             adict[prefix[0]], key, value, prefix=prefix[1:])
@@ -77,7 +84,7 @@ def set_dict_value(
     return None
 
 
-def update_dict_values(left_dict, params_dict):
+def update_dict_values(left_dict: dict, params_dict: dict) -> dict:
     """Used to update values of hierarhic dicts in python with params
     with dots as splitter"""
     for k, v in params_dict.items():

@@ -1,14 +1,13 @@
 """Base destination classes for writing data."""
 import gzip
+import importlib.util
 import io
 import logging
 import os.path
 from bz2 import BZ2File
 from lzma import LZMAFile
 from typing import Any, Iterable, Optional
-from zipfile import ZipFile, ZIP_DEFLATED
-
-from ..constants import SUPPORTED_FILE_TYPES
+from zipfile import ZIP_DEFLATED, ZipFile
 
 COMPRESSED_FILE_TYPES = [
     'gz', 'xz', 'zip', 'lz4', '7z', 'bz2', 'zst']
@@ -18,23 +17,14 @@ SUPPORTED_COMPRESSION = {
     'gz': True, 'zip': True, 'xz': False, '7z': False, 'lz4': False,
     'bz2': True, 'zst': False}
 
-try:
-    import lz4  # pylint: disable=unused-import
-    SUPPORTED_COMPRESSION['lz4'] = True
-except ImportError:
-    pass
+SUPPORTED_COMPRESSION['lz4'] = importlib.util.find_spec('lz4') is not None
+SUPPORTED_COMPRESSION['7z'] = importlib.util.find_spec('py7zr') is not None
 
 try:
-    import py7zr  # pylint: disable=unused-import
-    SUPPORTED_COMPRESSION['7z'] = True
-except ImportError:
-    pass
-
-try:
-    import zstandard  # noqa: F401
+    import zstandard
     SUPPORTED_COMPRESSION['zst'] = True
 except ImportError:
-    pass
+    zstandard = None
 
 
 class BaseDestination:
@@ -141,6 +131,10 @@ class BaseFileDestination(BaseDestination):
                         self._underlying_file = zip_file
                         self.fobj = io.TextIOWrapper(zip_file, encoding=encoding)
                 elif ext == 'zst':
+                    if zstandard is None:
+                        raise ImportError(
+                            "zstandard is required for .zst compression. "
+                            "Install it with: pip install zstandard")
                     if binary:
                         self.fobj = zstandard.open(filename, self.mode)
                     else:
@@ -211,11 +205,10 @@ class BaseFileDestination(BaseDestination):
         """Destructor: ensure file is closed even if close() wasn't called explicitly"""
         if not self._closed and self.fobj is not None:
             try:
-                # Silently attempt to close - don't log errors in destructor
                 self.fobj.close()
-            except Exception:
-                # Ignore all errors in destructor to avoid "Exception ignored" messages
-                pass
+            except Exception as error:
+                logging.debug(
+                    'Error closing file in destructor: %s', error)
             self._closed = True
 
 
@@ -237,7 +230,7 @@ class BaseDBDestination(BaseDestination):
 class BaseSearchDestination(BaseDestination):
     """Basic search index destination"""
     def __init__(self, connstr, indexname, token, reset=False, incremental=False):
-        """Init basic search indexedr destination"""
+        """Init basic search index destination"""
         self.connstr = connstr
         self.indexname = indexname
         self.token = token

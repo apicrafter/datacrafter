@@ -6,9 +6,9 @@ except ImportError:
     HAS_LXML = False
     etree = None
 
-from .zipped import ZIPSourceWrapper
 from .._registry import register_source
 from ..common.converters import etree_to_dict
+from .zipped import ZIPSourceWrapper
 
 
 @register_source("zipxml")

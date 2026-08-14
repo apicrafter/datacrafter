@@ -9,6 +9,7 @@ from datacrafter.common.mappers import (
     convert_to_float,
     convert_to_bool,
     map_keys,
+    map_document_fields,
     simple_typemap_object
 )
 
@@ -121,4 +122,32 @@ class TestSimpleTypemapObject:
         assert isinstance(result['active'], bool)
         assert result['active'] is True
         assert result['name'] == 'Alice'  # Unchanged
+
+    def test_nested_dotted_key(self):
+        schema = {'user.age': 'int'}
+        record = {'user': {'age': '30'}}
+        result = simple_typemap_object(record, schema)
+        assert result['user']['age'] == 30
+
+
+class TestMapDocumentFields:
+    def test_converts_listed_fields_and_nested_dicts(self):
+        record = {
+            'age': '30',
+            'active': 'true',
+            'score': '1.5',
+            'nested': {'age': '21'},
+            'tags': [{'age': '4'}, 'keep'],
+            'empty': None,
+        }
+        result = map_document_fields(
+            record, bool_fields=['active'], int_fields=['age'],
+            float_fields=['score'])
+        assert result['age'] == 30
+        assert result['active'] is True
+        assert result['score'] == 1.5
+        assert result['nested']['age'] == 21
+        assert result['tags'][0]['age'] == 4
+        assert result['tags'][1] == 'keep'
+        assert 'empty' not in result
 

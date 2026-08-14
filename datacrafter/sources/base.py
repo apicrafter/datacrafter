@@ -1,6 +1,5 @@
 from typing import Any, Iterator, List, Optional
 
-
 SOURCE_TYPE_STREAM = 10
 SOURCE_TYPE_FILE = 20
 DEFAULT_BULK_NUMBER = 100

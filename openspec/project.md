@@ -7,12 +7,12 @@ it with type detection and key mapping, and load it into file formats (JSONL/BSO
 or databases (MongoDB, ArangoDB, CouchDB, Meilisearch). Currently in alpha stage.
 
 ## Tech Stack
-- **Language:** Python 3.8+ (targeting modernization to 3.10+)
+- **Language:** Python 3.9+ (CI matrix 3.9–3.13)
 - **CLI framework:** Typer
 - **Data formats:** orjson, jsonlines, pymongo (BSON), openpyxl, xlrd, lxml
 - **Networking:** requests, beautifulsoup4
 - **Config:** PyYAML (`datacrafter.yml`)
-- **Packaging:** setuptools via `setup.py` (legacy; migrating to `pyproject.toml`)
+- **Packaging:** PEP 621 `pyproject.toml` (setuptools); `setup.py` is a shim
 - **Testing:** pytest, pytest-cov, pytest-mock, pytest-httpbin
 
 ## Project Conventions
@@ -26,13 +26,17 @@ or databases (MongoDB, ArangoDB, CouchDB, Meilisearch). Currently in alpha stage
 ### Architecture Patterns
 - ETL pipeline: Extract (extractors) → Process (processors) → Load (destinations)
 - Abstract base classes define protocols in `sources/base.py`, `destinations/base.py`
-- Factory functions in `sources/__init__.py` and `destinations/__init__.py` dispatch
-  on config `type` via if/elif chains (planned migration to plugin registry)
+- Factory functions in `sources/__init__.py`, `destinations/__init__.py`, and
+  `extractors/__init__.py` validate `type` via the decorator registry in
+  `_registry.py`, then construct instances (per-type kwargs still live in the
+  source/destination factories)
+- `validate_config` / `check_environment` live in `common/validation.py`;
+  `Project.validate()` and the CLI `check` / `config validate` commands share them
 - `Project` (`cmds/project.py`) orchestrates the pipeline; `core.py` is the Typer CLI
 - State persisted via `common/state.py:ProjectState`
 
 ### Testing Strategy
-- pytest with coverage; target 80% (currently ~35%, unenforced)
+- pytest with coverage; floor `fail_under = 80` in `.coveragerc`
 - Tests in `tests/`; `--strict-markers` enabled; markers: unit/integration/slow/backend
 - External services (Mongo/Arango/CouchDB/Meilisearch) must be mocked, not hit live
 
@@ -48,11 +52,11 @@ or databases (MongoDB, ArangoDB, CouchDB, Meilisearch). Currently in alpha stage
   intentional), but URLs/filenames flowing into shell commands are NOT trusted
 
 ## Important Constraints
-- Apache License 2.0 (NOT BSD — classifier must be corrected)
+- Apache License 2.0
 - Backward compatibility with existing `datacrafter.yml` configs must be preserved
 - Optional deps (pymongo, python-arango, meilisearch, pycouchdb) must stay optional
 
 ## External Dependencies
 - Optional DB drivers: pymongo (MongoDB), python-arango (ArangoDB),
   meilisearch (Meilisearch), pycouchdb (CouchDB) — guarded by try/except imports
-- apibackuper (unpinned — external tool for API backups)
+- apibackuper (>=1.0.4) — external tool for API backups

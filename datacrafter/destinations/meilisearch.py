@@ -9,8 +9,8 @@ except ImportError:
     HAS_MEILISEARCH = False
     meilisearch = None
 
-from .base import BaseSearchDestination
 from .._registry import register_destination
+from .base import BaseSearchDestination
 
 
 @register_destination("meilisearch")
