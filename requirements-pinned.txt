@@ -10,7 +10,7 @@ chardet==5.0.0
 typer==0.9.0
 jsonlines==1.2.0
 openpyxl==3.0.5
-orjson==3.6.6
+orjson==3.11.6
 pandas==2.0.0
 pymongo==4.6.0
 qddate==0.1.1
