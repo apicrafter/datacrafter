@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Docusaurus documentation site in `docs/` (Getting Started, Concepts, Use
+  Cases, CLI Reference, Configuration), with a GitHub Pages workflow for
+  `https://apicrafter.github.io/datacrafter/`.
 - Extractors register with `@register_extractor`; `get_extractor()` and
   `config schema` use `list_extractors()`.
 - Processor `run()` uses a single buffered write path and records processor stats
@@ -25,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ruff + pre-commit; publish workflow runs tests before uploading to PyPI.
 
 ### Changed
+- Documentation site replaced Jekyll/GitLab Pages with Docusaurus, organized
+  like undatum (Getting Started, Concepts, Use Cases, CLI, Configuration).
 - Coverage floor raised from 40% to 80%.
 - Source, destination, and extractor factories construct classes from the plugin registry.
 - CI ruff job runs the full E/F/W/I set from `pyproject.toml` (not pyflakes-only).
@@ -34,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `datacrafter init DIRECTORY` creates that directory (same as `--path`); docs match live extractor/destination types.
 
 ### Fixed
+- Dev extras install on Python 3.9 again (`pylint` 4.x needs 3.10+).
+- Pylint CI lints `datacrafter/` (not tests) and fails on errors only.
 - XLSX source factory no longer raises `NameError` for `start_line` when XLS was
   not opened first in the same process.
 - `Project.validate()` no longer always returns success.

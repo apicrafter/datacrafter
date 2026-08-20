@@ -367,6 +367,11 @@ testing, linting, branching conventions, and the pull-request process.
 
 ## Documentation
 
+The documentation website lives in [`docs/`](docs/) (Docusaurus). Preview locally
+with `cd docs && npm install && npm start`. After GitHub Pages is enabled it
+deploys to https://apicrafter.github.io/datacrafter/.
+
+- [Getting started](docs/docs/getting-started/quick-start.md) - First pipeline
 - [CONTRIBUTING.md](CONTRIBUTING.md) - How to set up and contribute
 - [Dependencies](DEPENDENCIES.md) - Dependency management guide
 - [CHANGELOG.md](CHANGELOG.md) - Version history

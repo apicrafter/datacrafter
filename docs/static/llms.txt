@@ -1,0 +1,43 @@
+# Datacrafter
+
+> NoSQL-first ETL command-line tool. Extract, transform, and load
+> record-oriented data with a git-friendly YAML project.
+
+- Docs: https://apicrafter.github.io/datacrafter/
+- Source: https://github.com/apicrafter/datacrafter
+- PyPI: https://pypi.org/project/datacrafter/
+
+## Install
+
+```bash
+pip install datacrafter
+datacrafter init my-project
+```
+
+## Pipeline
+
+A Datacrafter project is a directory with `datacrafter.yml`:
+
+1. Extract files into `current/` (URL, patterned HTML index, APIBackuper, RSS/Atom, DCAT, or a trusted Python `collect()` script).
+2. Transform records (`keymap`, `typemap`, optional `autotype` / `autoid`, optional custom `process(record)`).
+3. Load JSONL/BSON/CSV/Parquet or MongoDB / ArangoDB / CouchDB / Meilisearch.
+
+## Commands
+
+- `datacrafter init [DIRECTORY]` — create a project
+- `datacrafter run [--dry-run]` — execute the pipeline or print a plan
+- `datacrafter check` — validate config and environment
+- `datacrafter status` / `log` / `clean` — inspect and tidy a run
+- `datacrafter schema` / `metrics` — inspect JSONL output
+- `datacrafter config validate` / `config schema` — YAML help
+
+## Trust model
+
+`datacrafter.yml` and `code`-type scripts are trusted and can execute Python.
+URLs and filenames are untrusted and must not flow into a shell. Secrets belong
+in the environment (`connstr: ${MONGO_URI}`).
+
+## Optional extras
+
+- `pip install "datacrafter[parquet]"` for `file-parquet` (pyarrow)
+- MongoDB, ArangoDB, CouchDB, Meilisearch drivers are optional at runtime

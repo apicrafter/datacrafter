@@ -1,37 +1,44 @@
 {
-  "name": "datacrafter.io",
-  "author": "Datacrafter Team & Contributors <datacrafter@apicrafter.io>",
-  "license": "MIT",
-  "version": "1.01.0",
-  "description": "https://datacrafter.io",
-  "main": "index.js",
+  "name": "datacrafter-docs",
+  "version": "1.0.0",
+  "private": true,
   "scripts": {
-    "clean": "rm -rf node_modules public",
-    "dev": "vuepress dev src",
-    "build": "vuepress build src",
-    "dev:docs": "npm run dev",
-    "build:docs": "npm run build",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://gitlab.com/apicrafter/datacrafter.git"
-  },
-  "keywords": [
-    "datacrafter"
-  ],
-  "bugs": {
-    "url": "https://gitlab.com/apicrafter/datacrafter/issues"
-  },
-  "homepage": "https://gitlab.com/apicrafter/datacrafter#readme",
-  "devDependencies": {
-    "@vuepress/plugin-active-header-links": "^1.5.3",
-    "@vuepress/plugin-google-analytics": "^1.5.3",
-    "vuepress": "^1.5.3",
-    "vuepress-plugin-container": "^2.1.4"
+    "docusaurus": "docusaurus",
+    "start": "docusaurus start",
+    "build": "docusaurus build",
+    "swizzle": "docusaurus swizzle",
+    "deploy": "docusaurus deploy",
+    "clear": "docusaurus clear",
+    "serve": "docusaurus serve",
+    "write-translations": "docusaurus write-translations",
+    "write-heading-ids": "docusaurus write-heading-ids"
   },
   "dependencies": {
-    "bulma": "^0.9.3",
-    "bulma-timeline": "^3.0.4"
+    "@docusaurus/core": "^3.4.0",
+    "@docusaurus/preset-classic": "^3.4.0",
+    "@mdx-js/react": "^3.0.0",
+    "clsx": "^2.1.0",
+    "prism-react-renderer": "^2.3.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "^3.4.0",
+    "@docusaurus/types": "^3.4.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "engines": {
+    "node": ">=18.0"
   }
 }

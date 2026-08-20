@@ -62,6 +62,19 @@ The version is single-sourced in `datacrafter/__init__.py:__version__` and mirro
 in [CHANGELOG.md](CHANGELOG.md). Do not bump the version in a feature branch unless
 coordinating a release.
 
+## Documentation site
+
+The user-facing docs are a Docusaurus site in `docs/`. From the repository root:
+
+```bash
+cd docs
+npm install
+npm start          # live preview
+npm run build      # production build (fails on broken internal links)
+```
+
+Edit markdown under `docs/docs/`. See [docs/README.md](docs/README.md).
+
 ## Packaging
 
 ```bash
