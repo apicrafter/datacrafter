@@ -36,6 +36,7 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/apicrafter/datacrafter/"
+PyPI = "https://pypi.org/project/datacrafter-etl/"
 Source = "https://github.com/apicrafter/datacrafter/"
 Download = "https://github.com/apicrafter/datacrafter/"
 

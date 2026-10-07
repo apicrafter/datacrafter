@@ -419,6 +419,7 @@ Licensed under the Apache License 2.0. See [LICENSE](LICENSE) for details.
 
 ## Support
 
+- **PyPI**: https://pypi.org/project/datacrafter-etl/
 - **Issues**: https://github.com/apicrafter/datacrafter/issues
 - **Examples**: https://github.com/apicrafter/datacrafter-examples
 
