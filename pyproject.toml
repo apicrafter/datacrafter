@@ -13,13 +13,12 @@ authors = [
 # Version is read dynamically from datacrafter.__version__ (single source of truth)
 dynamic = ["version", "dependencies"]
 
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 keywords = ["json", "jsonl", "csv", "bson", "cli", "dataset", "etl", "data-pipelines"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -62,7 +61,7 @@ compression = ["zstandard>=0.25.0"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]

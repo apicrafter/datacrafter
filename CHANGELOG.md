@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+- Python 3.9 support dropped: `requires-python` is now `>=3.10` (3.9 reached
+  end-of-life in October 2025). Users on 3.9 should stay on the previous
+  release or upgrade. This unblocks modern dev floors: pylint 4, pre-commit
+  4.6+, pip-audit 2.10+, pytest 9 (interpreter markers removed).
+
 ### Added
 - Docusaurus documentation site in `docs/` (Getting Started, Concepts, Use
   Cases, CLI Reference, Configuration), with a GitHub Pages workflow for

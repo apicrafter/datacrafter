@@ -9,7 +9,7 @@ and the pull-request process.
 git clone https://github.com/apicrafter/datacrafter.git
 cd datacrafter
 
-# Create a virtual environment (Python 3.9+ required)
+# Create a virtual environment (Python 3.10+ required)
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 

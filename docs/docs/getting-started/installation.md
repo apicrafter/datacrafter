@@ -5,7 +5,7 @@ description: "Install Datacrafter with pip or from source"
 
 # Installation
 
-Datacrafter requires **Python 3.9 or newer**.
+Datacrafter requires **Python 3.10 or newer**.
 
 ## Using pip (recommended)
 
@@ -52,7 +52,7 @@ configured.
 
 ## Requirements
 
-- Python 3.9 or greater (CI tests 3.9–3.13)
+- Python 3.10 or greater (CI tests 3.10–3.13)
 - A writable project directory for `current/`, `output/`, and `state.json`
 
 ## Next steps

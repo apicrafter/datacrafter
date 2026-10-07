@@ -20,7 +20,7 @@ pip install -r requirements-dev.txt
 pip install -e .
 ```
 
-Python 3.9+ is required.
+Python 3.10+ is required.
 
 ## Tests and lint
 

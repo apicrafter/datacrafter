@@ -37,7 +37,7 @@ pip install -e .
 
 ### Requirements
 
-- Python 3.9 or higher
+- Python 3.10 or higher
 - See [requirements.txt](requirements.txt) for full dependency list
 
 ## Quick Start
@@ -355,7 +355,7 @@ only as a compatibility shim. Runtime dependencies are sourced from
 python -m build       # produces wheel + sdist in dist/
 ```
 
-CI runs the test matrix (Python 3.9–3.13), pip-audit, and publishes to PyPI on tag
+CI runs the test matrix (Python 3.10–3.13), pip-audit, and publishes to PyPI on tag
 via Trusted Publishing. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ### Contributing

@@ -7,7 +7,7 @@ it with type detection and key mapping, and load it into file formats (JSONL/BSO
 or databases (MongoDB, ArangoDB, CouchDB, Meilisearch). Currently in alpha stage.
 
 ## Tech Stack
-- **Language:** Python 3.9+ (CI matrix 3.9–3.13)
+- **Language:** Python 3.10+ (CI matrix 3.10–3.13)
 - **CLI framework:** Typer
 - **Data formats:** pymongo (BSON), openpyxl, xlrd, lxml; optional: zstandard, pyarrow
 - **Networking:** requests, beautifulsoup4
