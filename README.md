@@ -21,13 +21,23 @@ Reserved in CLI but **not implemented yet**: `builds` / `push` / `ui`, automatic
 
 ## Installation
 
-### Using pip (Recommended)
+> **Note:** the `datacrafter` name on PyPI belongs to an unrelated project,
+> so releases are distributed from GitHub only.
+
+### From a GitHub release (recommended)
 
 ```bash
-pip install datacrafter
+pip install \
+  https://github.com/apicrafter/datacrafter/releases/download/v2.0.0/datacrafter-2.0.0-py3-none-any.whl
 ```
 
-### From Source
+### From git
+
+```bash
+pip install git+https://github.com/apicrafter/datacrafter.git
+```
+
+### From source
 
 ```bash
 git clone https://github.com/apicrafter/datacrafter.git

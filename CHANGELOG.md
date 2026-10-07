@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Install instructions no longer point at PyPI: the `datacrafter` name there
+  belongs to an unrelated project. Releases are distributed from GitHub
+  (wheel artifacts on the release page, or `pip install git+...`); the PyPI
+  publish job is disabled until a distribution name is claimed.
+
 ## [2.0.0] - 2026-10-07
 
 ### Breaking
