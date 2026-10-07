@@ -5,7 +5,7 @@ typer>=0.9.0
 openpyxl>=3.0.5
 pymongo>=4.6.0
 tqdm>=4.70.1
-xlrd>=1.2.0
+xlrd>=2.0.2
 
 # Network and web scraping
 requests>=2.32.5
