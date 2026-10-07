@@ -9,6 +9,8 @@ from .base import BaseFileDestination
 @register_destination("file-jsonl")
 class JSONLinesDestination(BaseFileDestination):
     """JSON Lines destination implementation."""
+    FILE_EXTENSION = 'jsonl'
+
     def __init__(self, filename, compression=None):
         super().__init__(filename, binary=False, compression=compression)
 

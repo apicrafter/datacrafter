@@ -2,12 +2,14 @@
 import os
 import re
 
+from ..errors import DataCrafterError
+
 ENV_PATTERN = re.compile(
     r'\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}'
 )
 
 
-class MissingEnvVarError(ValueError):
+class MissingEnvVarError(DataCrafterError, ValueError):
     """Raised when a required ${VAR} has no environment value and no default."""
 
 

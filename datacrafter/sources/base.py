@@ -1,8 +1,8 @@
-from typing import Any, Iterator, List, Optional
+import logging
+from typing import Any, Iterator, Optional
 
 SOURCE_TYPE_STREAM = 10
 SOURCE_TYPE_FILE = 20
-DEFAULT_BULK_NUMBER = 100
 
 
 class BaseSource:
@@ -21,10 +21,6 @@ class BaseSource:
 
     def read(self, skip_empty: bool = True) -> Optional[Any]:
         """Read single record"""
-        raise NotImplementedError
-
-    def read_bulk(self, num: int = DEFAULT_BULK_NUMBER) -> List[Any]:
-        """Read multiple records"""
         raise NotImplementedError
 
     def is_flat(self) -> bool:
@@ -54,53 +50,56 @@ class BaseFileSource(BaseSource):
         """Read single record - must be overridden"""
         raise NotImplementedError
 
-    def read_bulk(self, num: int = DEFAULT_BULK_NUMBER) -> List[Any]:
-        """Read multiple records - must be overridden"""
-        raise NotImplementedError
-
     def __init__(self, filename: Optional[str], stream: Optional[Any],
                  binary: bool = False, encoding: str = 'utf8',
                  noopen: bool = False) -> None:
+        if filename is None and stream is None:
+            raise ValueError(
+                'Either filename or stream must be provided to open a source')
         self.filename = filename
         self.noopen = noopen
+        # An explicit stream takes precedence over the filename and is owned
+        # by this source: close() closes it.
         if stream is not None:
             self.stype = SOURCE_TYPE_STREAM
-        elif filename is not None:
+            self.fobj = stream
+        else:
             self.stype = SOURCE_TYPE_FILE
-        if filename:
             if not noopen:
                 if binary:
-                    self.fobj = open(filename, 'rb')
+                    self.fobj = open(filename or '', 'rb')
                 else:
-                    self.fobj = open(filename, 'r', encoding=encoding)
+                    self.fobj = open(filename or '', 'r', encoding=encoding)
             else:
                 self.fobj = None
-        else:
-            self.fobj = stream
 
     def reset(self):
-        if not self.noopen:
-            # Check if the file object is seekable before attempting to seek
-            if hasattr(self.fobj, 'seekable') and not self.fobj.seekable():
-                # Stream is not seekable (e.g., compressed files)
-                # Cannot reset, just continue from current position
-                pass
-            else:
-                self.fobj.seek(0)
+        if self.fobj is None:
+            return
+        # Check if the file object is seekable before attempting to seek
+        if hasattr(self.fobj, 'seekable') and not self.fobj.seekable():
+            # Stream is not seekable (e.g., some compressed streams)
+            # Cannot reset, just continue from current position
+            return
+        try:
+            self.fobj.seek(0)
+        except (OSError, ValueError):
+            logging.debug('Cannot rewind source stream', exc_info=True)
 
     def close(self):
-        """Close the file object if it's a file source"""
-        if self.stype == SOURCE_TYPE_FILE:
-            if self.fobj:
-                try:
-                    if hasattr(self.fobj, 'closed') and not self.fobj.closed:
-                        self.fobj.close()
-                    elif not hasattr(self.fobj, 'closed'):
-                        # Some file-like objects don't have 'closed' attribute
-                        self.fobj.close()
-                except (AttributeError, OSError, IOError):
-                    # File may already be closed or not closeable
-                    pass
+        """Close the file or stream owned by this source"""
+        if self.fobj is None:
+            return
+        try:
+            if getattr(self.fobj, 'closed', False):
+                return
+        except Exception:  # noqa: B011 - defensive probe of exotic streams
+            pass
+        try:
+            self.fobj.close()
+        except (AttributeError, OSError, IOError):
+            # File may already be closed or not closeable
+            logging.debug('Error closing source stream', exc_info=True)
 
     def __enter__(self):
         """Context manager entry"""

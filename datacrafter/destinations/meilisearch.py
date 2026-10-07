@@ -7,7 +7,7 @@ try:
     HAS_MEILISEARCH = True
 except ImportError:
     HAS_MEILISEARCH = False
-    meilisearch = None
+    meilisearch = None  # type: ignore[assignment]
 
 from .._registry import register_destination
 from .base import BaseSearchDestination
@@ -16,6 +16,18 @@ from .base import BaseSearchDestination
 @register_destination("meilisearch")
 class MeilisearchDestination(BaseSearchDestination):
     """Meilisearch Destination"""
+
+    @classmethod
+    def from_config(cls, dirpath, options):
+        from .base import get_option_value
+        return cls(
+            connstr=get_option_value(
+                options, 'connstr', 'https://127.0.0.1:7700'),
+            indexname=get_option_value(options, 'indexname', ''),
+            token=get_option_value(options, 'token', ''),
+            reset=get_option_value(options, 'reset', False),
+            incremental=get_option_value(options, 'incremental', True))
+
     def __init__(self, connstr, indexname, token, reset=False, incremental=True):
         """Init destination"""
         if not HAS_MEILISEARCH:

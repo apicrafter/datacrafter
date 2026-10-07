@@ -1,30 +1,47 @@
 """Base destination classes for writing data."""
 import gzip
-import importlib.util
 import io
 import logging
 import os.path
 from bz2 import BZ2File
 from lzma import LZMAFile
-from typing import Any, Iterable, Optional
+from typing import Any, ClassVar, Iterable, Optional
 from zipfile import ZIP_DEFLATED, ZipFile
 
-COMPRESSED_FILE_TYPES = [
-    'gz', 'xz', 'zip', 'lz4', '7z', 'bz2', 'zst']
-BINARY_FILE_TYPES = ['xls', 'xlsx', 'bson', 'parquet'] + COMPRESSED_FILE_TYPES
-
-SUPPORTED_COMPRESSION = {
-    'gz': True, 'zip': True, 'xz': False, '7z': False, 'lz4': False,
-    'bz2': True, 'zst': False}
-
-SUPPORTED_COMPRESSION['lz4'] = importlib.util.find_spec('lz4') is not None
-SUPPORTED_COMPRESSION['7z'] = importlib.util.find_spec('py7zr') is not None
+from ..errors import DestinationWriteError
 
 try:
     import zstandard
-    SUPPORTED_COMPRESSION['zst'] = True
 except ImportError:
-    zstandard = None
+    zstandard = None  # type: ignore[assignment]
+
+COMPRESSED_FILE_TYPES = ['gz', 'xz', 'zip', 'bz2', 'zst']
+BINARY_FILE_TYPES = ['xls', 'xlsx', 'bson', 'parquet'] + COMPRESSED_FILE_TYPES
+
+# Derived from the codec branches implemented in BaseFileDestination.__init__:
+# a codec is supported if and only if a handler branch exists for it.
+IMPLEMENTED_COMPRESSION = ('gz', 'bz2', 'xz', 'zip', 'zst')
+SUPPORTED_COMPRESSION = {
+    ext: ext != 'zst' or zstandard is not None
+    for ext in IMPLEMENTED_COMPRESSION
+}
+
+
+def get_option_value(options, key, default):
+    """Return option value or default"""
+    return options[key] if key in options.keys() else default
+
+
+def get_compression_value(options):
+    """Get compression value from either 'compress' or 'compression' key.
+
+    Supports both keys for user convenience; returns None if neither present.
+    """
+    if 'compression' in options:
+        return options['compression']
+    if 'compress' in options:
+        return options['compress']
+    return None
 
 
 class BaseDestination:
@@ -69,15 +86,42 @@ class BaseFileDestination(BaseDestination):
         """Write multiple records - must be overridden"""
         raise NotImplementedError
 
+    #: File extension used to build the output filename from ``fileprefix``.
+    FILE_EXTENSION: ClassVar[Optional[str]] = None
+
+    @classmethod
+    def from_config(cls, dirpath, options):
+        """Build a file destination from config (fileprefix + compression)."""
+        if cls.FILE_EXTENSION is None:
+            raise ValueError(
+                f'{cls.__name__} does not support config-based construction')
+        if 'fileprefix' not in options:
+            raise ValueError(
+                f"File destination requires the 'fileprefix' option; "
+                f"got: {sorted(options)}")
+        compression = get_compression_value(options)
+        filename = os.path.join(
+            dirpath, options['fileprefix'] + '.' + cls.FILE_EXTENSION)
+        if compression is not None:
+            filename = filename + '.' + compression
+        return cls(
+            filename=filename, compression=compression,
+            **cls._extra_config_kwargs(options))
+
+    @classmethod
+    def _extra_config_kwargs(cls, options):
+        """Per-type constructor kwargs beyond filename/compression."""
+        return {}
+
     def __init__(
             self, filename: str, binary: bool = False, encoding: str = 'utf8',
             compression: Optional[str] = None, ftype: Optional[str] = None) -> None:
         self.binary = binary
         self.ftype = ftype
         self.mode = 'wb' if binary else 'w'
-        self.fobj = None
+        self.fobj: Optional[Any] = None
         # Store reference to underlying file for proper cleanup
-        self._underlying_file = None
+        self._underlying_file: Optional[Any] = None
         self._closed = False
         # Store filename for error messages
         self._filename = filename
@@ -91,7 +135,7 @@ class BaseFileDestination(BaseDestination):
                 self.fobj = open(filename, self.mode, encoding=encoding)
         else:
             ext = compression
-            if ext in SUPPORTED_COMPRESSION:
+            if ext in SUPPORTED_COMPRESSION and SUPPORTED_COMPRESSION[ext]:
                 if ext == 'gz':
                     self.mode = 'wb' if binary else 'wt'
                     if binary:
@@ -105,7 +149,7 @@ class BaseFileDestination(BaseDestination):
                             filename, 'wt', encoding=encoding)
                 elif ext == 'bz2':
                     if binary:
-                        self.fobj = BZ2File(filename, self.mode)
+                        self.fobj = BZ2File(filename, 'wb')
                     else:
                         bz2_file = BZ2File(filename, 'w')
                         self._underlying_file = bz2_file
@@ -139,81 +183,83 @@ class BaseFileDestination(BaseDestination):
                         self.fobj = zstandard.open(filename, self.mode)
                     else:
                         self.fobj = zstandard.open(filename, 'wt', encoding=encoding)
-                else:
-                    raise NotImplementedError
             else:
-                raise NotImplementedError
+                raise ValueError(
+                    f'Unsupported compression {compression!r}. '
+                    f'Supported codecs: {list(IMPLEMENTED_COMPRESSION)}')
 
     def close(self):
-        """Close file and archive container if ZIP or 7z file formats"""
+        """Close the output stream, wrapped file, and archive container.
+
+        A flush failure raises ``DestinationWriteError`` after best-effort
+        cleanup of every owned stream; closing already-failed resources stays
+        best-effort.
+        """
         if self._closed:
             return
-
+        self._closed = True
+        flush_error = None
         try:
             if self.fobj is not None:
                 try:
-                    # Flush before closing to ensure all data is written
                     if hasattr(self.fobj, 'flush'):
-                        try:
-                            self.fobj.flush()
-                        except (RuntimeError, OSError, IOError):
-                            # Ignore flush errors, proceed to close
-                            pass
+                        self.fobj.flush()
+                except (RuntimeError, OSError, IOError) as error:
+                    flush_error = error
+                try:
                     self.fobj.close()
                 except (RuntimeError, OSError, IOError) as error:
-                    # Handle "lost gzip_file" and similar errors gracefully
-                    error_msg = str(error).lower()
-                    if 'lost gzip_file' in error_msg or 'lost' in error_msg:
-                        # This is a known issue with gzip files wrapped in
-                        # TextIOWrapper
-                        # Should not happen with direct gzip.open() text mode,
-                        # but handle gracefully
-                        logging.debug(
-                            'Encountered gzip file closure issue: %s', error)
-                    else:
-                        logging.warning('Error closing file object: %s', error)
-                    # Try to close underlying file if it exists
-                    # (for TextIOWrapper cases)
-                    if self._underlying_file is not None:
-                        try:
-                            self._underlying_file.close()
-                        except Exception as close_error:
-                            logging.debug(
-                                'Error closing underlying file: %s', close_error)
-                except Exception as error:
-                    logging.warning(
-                        'Unexpected error closing file object: %s', error)
-                    # Try to close underlying file if it exists
-                    if self._underlying_file is not None:
-                        try:
-                            self._underlying_file.close()
-                        except Exception as close_error:
-                            logging.debug(
-                                'Error closing underlying file: %s', close_error)
-        except Exception as error:
-            logging.warning('Error in close() method: %s', error)
-        finally:
-            # Close archive container if it exists (for ZIP files)
-            if hasattr(self, 'archiveobj') and self.archiveobj is not None:
+                    logging.debug('Error closing file object: %s', error)
+            if self._underlying_file is not None:
                 try:
-                    self.archiveobj.close()
-                except Exception as error:
+                    self._underlying_file.close()
+                except (RuntimeError, OSError, IOError) as error:
+                    logging.debug('Error closing underlying file: %s', error)
+        finally:
+            archiveobj = getattr(self, 'archiveobj', None)
+            if archiveobj is not None:
+                try:
+                    archiveobj.close()
+                except (RuntimeError, OSError, IOError) as error:
                     logging.warning('Error closing archive: %s', error)
-            self._closed = True
+        if flush_error is not None:
+            raise DestinationWriteError(
+                f'Failed to flush destination {self._filename}: {flush_error}'
+            ) from flush_error
 
     def __del__(self):
-        """Destructor: ensure file is closed even if close() wasn't called explicitly"""
-        if not self._closed and self.fobj is not None:
-            try:
-                self.fobj.close()
-            except Exception as error:
-                logging.debug(
-                    'Error closing file in destructor: %s', error)
-            self._closed = True
+        """Destructor: close all owned streams even without explicit close()"""
+        try:
+            self.close()
+        except Exception:
+            # Never raise from a destructor; log for diagnosis instead.
+            logging.debug('Error closing destination in destructor', exc_info=True)
+
+    def __enter__(self):
+        """Context manager entry"""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - ensures all streams are closed"""
+        self.close()
+        return False
 
 
 class BaseDBDestination(BaseDestination):
     """Basic database destination"""
+
+    #: Fallback connection string when the config omits ``connstr``.
+    DEFAULT_CONNSTR: ClassVar[Optional[str]] = None
+
+    @classmethod
+    def from_config(cls, dirpath, options):
+        """Build a DB destination from config (connstr/dbname/tablename)."""
+        return cls(
+            connstr=get_option_value(options, 'connstr', cls.DEFAULT_CONNSTR),
+            dbname=get_option_value(options, 'dbname', 'default'),
+            tablename=get_option_value(options, 'tablename', 'default'),
+            username=get_option_value(options, 'username', None),
+            password=get_option_value(options, 'password', None))
 
     def __init__(self, connstr, dbname, tablename, username=None, password=None):
         self.connstr = connstr

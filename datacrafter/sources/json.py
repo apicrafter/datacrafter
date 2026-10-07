@@ -8,6 +8,15 @@ from .base import BaseFileSource
 @register_source("json")
 class JSONSource(BaseFileSource):
     """JSON source implementation."""
+    COMPRESSION_MODE = 'text'
+
+    @classmethod
+    def from_config(cls, filename=None, stream=None, options=None):
+        options = options or {}
+        return cls(
+            filename=filename, stream=stream,
+            tagname=options.get('tagname'))
+
     def __init__(self, filename=None, stream=None, tagname=None):
         super().__init__(filename, stream, binary=False)
         self.tagname = tagname
@@ -28,10 +37,3 @@ class JSONSource(BaseFileSource):
         row = self.data[self.pos]
         self.pos += 1
         return row
-
-    def read_bulk(self, num):
-        """Read bulk JSON records"""
-        chunk = []
-        for _ in range(0, num):
-            chunk.append(self.read())
-        return chunk

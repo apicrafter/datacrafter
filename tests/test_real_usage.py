@@ -11,6 +11,7 @@ import pytest
 
 from datacrafter.processors.base import CommonProcessor
 from datacrafter.sources import get_source_from_file
+from tests.conftest import RecordingDestination as _RecordingDestination
 
 pytestmark = pytest.mark.integration
 
@@ -20,23 +21,6 @@ class _MockProject:
 
     def __init__(self):
         self.project = {'processor': {'config': {}}}
-
-
-class _RecordingDestination:
-    """Destination that records written records in memory."""
-
-    def __init__(self):
-        self.records = []
-        self.bulk_records = []
-
-    def write(self, record):
-        self.records.append(record)
-
-    def write_bulk(self, records):
-        self.bulk_records.extend(records)
-
-    def close(self):
-        pass
 
 
 @pytest.fixture

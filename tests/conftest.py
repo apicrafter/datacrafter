@@ -1,13 +1,12 @@
 """Pytest configuration and fixtures"""
 import os
-import tempfile
 import shutil
+import tempfile
 from pathlib import Path
 
 import pytest
 
 from datacrafter.cmds.project import Project
-from datacrafter.common.state import ProjectState
 
 
 @pytest.fixture
@@ -101,8 +100,26 @@ def state_file(temp_dir):
     return os.path.join(temp_dir, 'state.json')
 
 
+class RecordingDestination:
+    """In-memory destination that records written records (shared fixture)."""
+
+    def __init__(self):
+        self.records = []
+        self.bulk_records = []
+        self.closed = False
+
+    def write(self, record):
+        self.records.append(record)
+
+    def write_bulk(self, records):
+        self.bulk_records.extend(records)
+
+    def close(self):
+        self.closed = True
+
+
 @pytest.fixture
-def empty_state(state_file):
-    """Create an empty project state"""
-    return ProjectState(filename=state_file, reset=True, autosave=False)
+def recording_destination():
+    """Provide an in-memory destination capturing write() and write_bulk()."""
+    return RecordingDestination()
 

@@ -9,25 +9,25 @@ from datacrafter.sources.bsonf import BSONSource
 from datacrafter.sources.csv import CSVSource
 from datacrafter.sources.json import JSONSource
 from datacrafter.sources.jsonl import JSONLinesSource
-from datacrafter.sources.xml import XMLSource
-from datacrafter.sources.xlsx import XLSXSource
 from datacrafter.sources.xls import XLSSource
+from datacrafter.sources.xlsx import XLSXSource
+from datacrafter.sources.xml import XMLSource
 from datacrafter.sources.zipped import ZIPSourceWrapper
 from datacrafter.sources.zipxml import ZIPXMLSource
 
 
 class TestJSONLinesSource:
     """Tests for JSONLinesSource"""
-    
+
     def test_read_single_record(self, jsonl_file):
         """Test reading a single record"""
         source = JSONLinesSource(filename=jsonl_file)
         record = source.read()
-        
+
         assert record['id'] == 1
         assert record['name'] == 'Alice'
         assert record['age'] == 30
-    
+
     def test_read_multiple_records(self, jsonl_file):
         """Test reading multiple records"""
         source = JSONLinesSource(filename=jsonl_file)
@@ -37,30 +37,21 @@ class TestJSONLinesSource:
                 records.append(source.read())
         except (StopIteration, ValueError):
             pass  # End of file or parsing error
-        
+
         assert len(records) == 3
         assert records[0]['name'] == 'Alice'
         assert records[1]['name'] == 'Bob'
         assert records[2]['name'] == 'Charlie'
-    
-    def test_read_bulk(self, jsonl_file):
-        """Test reading bulk records"""
-        source = JSONLinesSource(filename=jsonl_file)
-        records = source.read_bulk(2)
-        
-        assert len(records) == 2
-        assert records[0]['id'] == 1
-        assert records[1]['id'] == 2
-    
+
     def test_reset(self, jsonl_file):
         """Test resetting the source"""
         source = JSONLinesSource(filename=jsonl_file)
         record1 = source.read()
         source.reset()
         record2 = source.read()
-        
+
         assert record1 == record2
-    
+
     def test_context_manager(self, jsonl_file):
         """Test using source as context manager"""
         with JSONLinesSource(filename=jsonl_file) as source:
@@ -71,25 +62,25 @@ class TestJSONLinesSource:
 
 class TestCSVSource:
     """Tests for CSVSource"""
-    
+
     def test_read_single_record(self, csv_file):
         """Test reading a single CSV record"""
         source = CSVSource(filename=csv_file, keys=None)
         record = source.read()
-        
+
         assert record['id'] == '1'
         assert record['name'] == 'Alice'
         assert record['age'] == '30'
-    
+
     def test_read_with_custom_keys(self, csv_file):
         """Test reading CSV with custom keys"""
         source = CSVSource(filename=csv_file, keys=['id', 'name', 'age'])
         record = source.read()
-        
+
         assert 'id' in record
         assert 'name' in record
         assert 'age' in record
-    
+
     def test_is_flat(self, csv_file):
         """Test that CSV source is flat"""
         source = CSVSource(filename=csv_file)
@@ -104,7 +95,8 @@ class TestJSONSource:
         source = JSONSource(filename=path)
         assert source.id() == 'json'
         assert source.read() == {'id': 1}
-        assert source.read_bulk(2) == [{'id': 2}, {'id': 3}]
+        assert source.read() == {'id': 2}
+        assert source.read() == {'id': 3}
         with pytest.raises(StopIteration):
             source.read()
 
@@ -127,7 +119,8 @@ class TestBSONSource:
         source = BSONSource(filename=path)
         assert source.id() == 'bson'
         assert source.read()['id'] == 1
-        assert [doc['id'] for doc in source.read_bulk(2)] == [2, 3]
+        assert source.read()['id'] == 2
+        assert source.read()['id'] == 3
 
 
 class TestXMLSource:
@@ -142,7 +135,7 @@ class TestXMLSource:
         assert source.id() == 'xml'
         assert source.is_flat() is False
         assert source.read() == {'name': 'Ada'}
-        assert source.read_bulk(1) == [{'name': 'Bob'}]
+        assert source.read() == {'name': 'Bob'}
 
 
 class TestXLSXSource:
@@ -162,7 +155,7 @@ class TestXLSXSource:
         assert source.id() == 'xlsx'
         assert source.is_flat() is True
         assert source.read() == {'id': '1', 'name': 'Ada'}
-        assert source.read_bulk(1) == [{'id': '2', 'name': 'Bob'}]
+        assert source.read() == {'id': '2', 'name': 'Bob'}
 
     def test_reads_selected_sheet(self, temp_dir):
         pytest.importorskip('openpyxl')
@@ -185,22 +178,23 @@ class TestXLSXSource:
 class TestXLSSource:
     def test_read_rows_skipping_header(self, temp_dir):
         pytest.importorskip('xlrd')
-        pandas = pytest.importorskip('pandas')
+        xlwt = pytest.importorskip('xlwt')
         path = os.path.join(temp_dir, 'data.xls')
-        try:
-            pandas.DataFrame(
-                {'id': [1, 2], 'name': ['Ada', 'Bob']}
-            ).to_excel(path, index=False, engine='xlwt')
-        except (ImportError, ValueError, ModuleNotFoundError):
-            pytest.skip('xlwt is not available to write .xls fixtures')
+        workbook = xlwt.Workbook()
+        sheet = workbook.add_sheet('data')
+        for col, header in enumerate(['id', 'name']):
+            sheet.write(0, col, header)
+        sheet.write(1, 0, 1)
+        sheet.write(1, 1, 'Ada')
+        sheet.write(2, 0, 2)
+        sheet.write(2, 1, 'Bob')
+        workbook.save(path)
         source = XLSSource(
             filename=path, keys=['id', 'name'], start_line=1)
         assert source.id() == 'xls'
         assert source.is_flat() is True
-        row = source.read()
-        assert row['name'] == 'Ada'
-        bulk = source.read_bulk(1)
-        assert bulk[0]['name'] == 'Bob'
+        assert source.read()['name'] == 'Ada'
+        assert source.read()['name'] == 'Bob'
 
 
 class TestZIPSourceWrapper:
@@ -249,8 +243,7 @@ class TestZIPXMLSource:
         assert source.is_flat() is False
         first = source.read()
         assert first['name'] == 'Ada'
-        rest = source.read_bulk(5)
-        assert rest[0]['name'] == 'Bob'
+        assert source.read()['name'] == 'Bob'
         source.reset()
         assert source.read()['name'] == 'Ada'
         source.close()
@@ -328,7 +321,7 @@ class TestXLSSourceMocked:
         assert source.id() == 'xls'
         assert source.is_flat() is True
         assert source.read() == {'id': '1', 'name': 'Ada'}
-        assert source.read_bulk(1) == [{'id': '2', 'name': 'Bob'}]
+        assert source.read() == {'id': '2', 'name': 'Bob'}
         with pytest.raises(StopIteration):
             source.read()
         source.close()

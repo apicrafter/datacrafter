@@ -36,9 +36,10 @@ pip install -e .
 File JSONL, BSON, and CSV destinations ship with the core package. Some
 destinations need extra Python packages:
 
-| Destination | Package |
-|-------------|----------|
+| Destination / feature | Package |
+|------------------------|----------|
 | `file-parquet` | `pip install "datacrafter[parquet]"` (pyarrow) |
+| `.zst` compression (sources and destinations) | `pip install "datacrafter[compression]"` (zstandard) |
 | `mongodb` | `pymongo` |
 | `arangodb` | `python-arango` |
 | `couchdb` | `pycouchdb` |

@@ -8,6 +8,12 @@ from .base import BaseFileSource
 @register_source("jsonl")
 class JSONLinesSource(BaseFileSource):
     """JSON Lines source implementation."""
+    COMPRESSION_MODE = 'text'
+
+    @classmethod
+    def from_config(cls, filename=None, stream=None, options=None):
+        return cls(filename=filename, stream=stream)
+
     def __init__(self, filename=None, stream=None):
         super().__init__(filename, stream, binary=False)
         self.pos = 0
@@ -24,10 +30,3 @@ class JSONLinesSource(BaseFileSource):
         if line:
             return loads(line)
         return None
-
-    def read_bulk(self, num):
-        """Read bulk JSON lines records"""
-        chunk = []
-        for _ in range(0, num):
-            chunk.append(loads(self.fobj.readline()))
-        return chunk

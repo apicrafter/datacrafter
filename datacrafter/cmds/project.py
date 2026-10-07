@@ -10,11 +10,13 @@ import yaml
 
 # Project imports
 from ..common.datapackage import write_datapackage
-from ..common.env import interpolate_env
+from ..common.logconfig import enable_project_logging
+from ..common.projectconfig import load_config
 from ..common.state import ProjectState
 from ..common.validation import extractor_specs, validate_config
 from ..constants import DEFAULT_BULK_RECORDS
 from ..destinations import get_destination_from_config
+from ..errors import DestinationWriteError
 from ..extractors import get_extractor
 from ..processors.base import CommonProcessor
 from ..sources import get_source_from_file
@@ -30,17 +32,6 @@ def _plan_extractor(spec):
         'mode': spec.get('mode'),
         'url': (spec.get('config') or {}).get('url'),
     }
-
-
-def load_config(filename):
-    """Load YAML configuration file using safe loading.
-
-    ``yaml.safe_load`` is used (rather than the full ``Loader``/``CLoader``) so that
-    configuration files cannot construct arbitrary Python objects via YAML tags.
-    """
-    with open(filename, 'r', encoding='utf8') as file_obj:
-        data = yaml.safe_load(file_obj)
-    return interpolate_env(data) if data is not None else {}
 
 
 def remove_dir_contents(dirpath, debug=False):
@@ -82,69 +73,13 @@ class Project:
 
 
     def enable_logging(self, console=True, tofile=False, structured=False):
-        """Enable logging to file and stderr with rotation support"""
-        rootLogger = logging.getLogger()
+        """Enable logging to file and stderr with rotation support.
 
-        # Preserve the current effective level (may be set to DEBUG for verbose mode)
-        current_level = rootLogger.getEffectiveLevel()
-
-        # Remove existing handlers to avoid duplicates
-        rootLogger.handlers.clear()
-
-        # Preserve DEBUG if it was already set (e.g. for verbose mode); otherwise
-        # default to INFO for normal operation. (Previously this was a no-op
-        # tautology whose two branches both returned logging.DEBUG.)
-        rootLogger.setLevel(
-            logging.DEBUG if current_level <= logging.DEBUG else logging.INFO)
-
-        if structured:
-            # Structured logging (JSON format)
-            import json
-            class JSONFormatter(logging.Formatter):
-                """JSON formatter for structured logging."""
-                def format(self, record):
-                    log_entry = {
-                        'timestamp': self.formatTime(record, self.datefmt),
-                        'level': record.levelname,
-                        'logger': record.name,
-                        'message': record.getMessage(),
-                        'module': record.module,
-                        'function': record.funcName,
-                        'line': record.lineno
-                    }
-                    if record.exc_info:
-                        log_entry['exception'] = self.formatException(record.exc_info)
-                    return json.dumps(log_entry)
-
-            formatter = JSONFormatter()
-        else:
-            # Standard text format
-            formatter = logging.Formatter(
-                "%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s"
-            )
-
-        if tofile:
-            # Use RotatingFileHandler for log rotation
-            from logging.handlers import RotatingFileHandler
-            # Rotate when file reaches 10MB, keep 5 backup files
-            fileHandler = RotatingFileHandler(
-                self.logfile,
-                maxBytes=10 * 1024 * 1024,  # 10MB
-                backupCount=5,
-                encoding='utf-8'
-            )
-            fileHandler.setLevel(logging.DEBUG)  # File gets all logs
-            fileHandler.setFormatter(formatter)
-            rootLogger.addHandler(fileHandler)
-
-        if console:
-            consoleHandler = logging.StreamHandler()
-            # Use DEBUG level if verbose mode was enabled (current_level was DEBUG)
-            # Otherwise default to INFO for normal operation
-            console_level = logging.DEBUG if current_level <= logging.DEBUG else logging.INFO
-            consoleHandler.setLevel(console_level)
-            consoleHandler.setFormatter(formatter)
-            rootLogger.addHandler(consoleHandler)
+        Delegates to the single logging owner; external handlers and levels
+        are preserved (see ``common/logconfig.py``).
+        """
+        enable_project_logging(
+            self.logfile, console=console, tofile=tofile, structured=structured)
 
     def __read_project_file(self, _filename):
         """Reads project file content"""
@@ -283,13 +218,9 @@ class Project:
 
     def finish(self):
         """Executed on end of the project. Ensures destination is closed"""
-        # Ensure destination is closed if not already closed
+        # Close failures (e.g. flush errors) must fail the run, not warn.
         if self.destination is not None:
-            try:
-                self.destination.close()
-                logging.info('Destination closed in finish()')
-            except Exception as error:
-                logging.warning('Error closing destination in finish(): %s', error)
+            self.destination.close()
         dest_cfg = self.project.get('destination') or {}
         if (
                 dest_cfg.get('datapackage', True)
@@ -302,8 +233,59 @@ class Project:
                 if written:
                     logging.info('Wrote data package %s', written)
             except Exception as error:
-                logging.warning('Could not write datapackage.json: %s', error)
+                logging.error('Could not write datapackage.json: %s', error)
+                raise
         logging.info("Finished project: %s", self.project['project-name'])
+
+    def _processor_source_options(self):
+        """Source type/options from the processor config block."""
+        section = self.project.get('processor') or {}
+        options = section.get('config') if isinstance(section, dict) else None
+        options = options if isinstance(options, dict) else {}
+        stype = options.get('type')
+        return stype, options
+
+    def _process_resource(self, resource, processed_files, failed_files):
+        """Process one extractor resource; record outcome in the lists."""
+        filename = resource.get('filename', 'unknown')
+        stype, options = self._processor_source_options()
+        source = None
+        try:
+            logging.info('Processing %s', os.path.basename(filename))
+            source = get_source_from_file(filename, stype=stype, options=options)
+            try:
+                self.processor.run(
+                    source, self.destination, buffer_size=DEFAULT_BULK_RECORDS)
+                logging.info('Processing complete %s', os.path.basename(filename))
+                processed_files.append(filename)
+            except Exception as error:
+                logging.error('Failed to process %s: %s', filename, error)
+                failed_files.append(
+                    {'filename': filename, 'error': str(error)})
+                # Continue with next file instead of failing completely
+        except Exception as error:
+            logging.error('Error setting up source for %s: %s', filename, error)
+            failed_files.append({'filename': filename, 'error': str(error)})
+        finally:
+            if source is not None and hasattr(source, 'close'):
+                try:
+                    source.close()
+                except Exception as error:
+                    logging.debug('Error closing source: %s', error)
+
+    @staticmethod
+    def _log_process_summary(total, processed_files, failed_files):
+        if failed_files:
+            logging.warning(
+                'Some files failed to process: %s/%s', len(failed_files), total)
+            for failed in failed_files[:5]:  # Show first 5 errors
+                logging.warning(
+                    "  - %s: %s", failed['filename'], failed['error'])
+            if len(failed_files) > 5:
+                logging.warning("  ... and %s more", len(failed_files) - 5)
+        else:
+            logging.info(
+                'Successfully processed all %s files', len(processed_files))
 
     def process(self):
         """Runs processors and stores result at the destination"""
@@ -317,66 +299,16 @@ class Project:
             logging.error('No resources to process from extractor stage')
             raise ValueError('No resources to process from extractor stage')
 
-        options = {}
-        stype = None
         processed_files = []
         failed_files = []
-
         try:
-            for r in resources:
-                filename = r.get('filename', 'unknown')
-                try:
-                    if 'processor' in self.project.keys():
-                        if 'config' in self.project['processor'].keys():
-                            options = self.project['processor']['config']
-                            if 'type' in options.keys():
-                                stype = options['type']
-                    logging.info('Processing %s', os.path.basename(filename))
-                    source = get_source_from_file(
-                        filename, stype=stype, options=options)
-                    try:
-                        self.processor.run(
-                            source, self.destination,
-                            buffer_size=DEFAULT_BULK_RECORDS)
-                        logging.info(
-                            'Processing complete %s', os.path.basename(filename))
-                        processed_files.append(filename)
-                    except Exception as e:
-                        logging.error('Failed to process %s: %s', filename, e)
-                        failed_files.append({'filename': filename, 'error': str(e)})
-                        # Continue with next file instead of failing completely
-                    finally:
-                        # Ensure source is closed after processing
-                        if hasattr(source, 'close'):
-                            try:
-                                source.close()
-                            except Exception as error:
-                                logging.debug('Error closing source: %s', error)
-                except Exception as error:
-                    logging.error('Error setting up source for %s: %s', filename, error)
-                    failed_files.append({'filename': filename, 'error': str(error)})
-                    continue
-
-            # Summary
-            if failed_files:
-                logging.warning(
-                    'Some files failed to process: %s/%s',
-                    len(failed_files), len(resources))
-                for failed in failed_files[:5]:  # Show first 5 errors
-                    logging.warning("  - %s: %s", failed['filename'], failed['error'])
-                if len(failed_files) > 5:
-                    logging.warning("  ... and %s more", len(failed_files) - 5)
-            else:
-                logging.info(
-                    'Successfully processed all %s files', len(processed_files))
+            for resource in resources:
+                self._process_resource(resource, processed_files, failed_files)
+            self._log_process_summary(len(resources), processed_files, failed_files)
         finally:
-            # Ensure destination is closed to flush buffers and write file
+            # Close failures (e.g. flush errors) must fail the run, not warn.
             if self.destination is not None:
-                try:
-                    self.destination.close()
-                    logging.info('Destination closed')
-                except Exception as error:
-                    logging.warning('Error closing destination: %s', error)
+                self.destination.close()
 
     def plan(self):
         """Return a dry-run plan without extracting or writing."""
@@ -449,5 +381,19 @@ class Project:
             filename=self.state_file, reset=pre_clean, autosave=True)
         self.prepare()
         self.collect(proceed)
-        self.process()
-        self.finish()
+        try:
+            self.process()
+        except Exception as error:
+            # A destination flush/close failure is a load failure, not a
+            # transform failure; record it under the right stage.
+            stage = ('destination' if isinstance(error, DestinationWriteError)
+                     else 'processor')
+            self.state.add(
+                stage, status='fail', results=[], error=str(error))
+            raise
+        try:
+            self.finish()
+        except Exception as error:
+            self.state.add(
+                'destination', status='fail', results=[], error=str(error))
+            raise

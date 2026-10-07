@@ -1,6 +1,7 @@
 """Data mapping and transformation utilities."""
 import datetime
 import logging
+from functools import lru_cache
 from typing import Any, Optional
 
 from ..common.common import get_dict_value, set_dict_value
@@ -53,7 +54,6 @@ def map_keys(obj, keys, qd=None):
             if rule['type'] == TYPE_INT:
                 result[newk] = int(obj[k])
             elif rule['type'] == TYPE_DATE:
-                #                parts = obj[k].split('.')
                 result[newk] = datefunc(obj[k])
             elif rule['type'] == TYPE_FLOAT:
                 result[newk] = float(obj[k])
@@ -69,51 +69,65 @@ def map_keys(obj, keys, qd=None):
                 items.append(o)
             result[newk] = items
         else:
-            #            print(obj)
             result[newk] = obj[k]
     return result
 
 
-def convert_to_datetime(string):
-    """Resource consuming but effective date time conversion"""
-    try:
-        if len(string) == 0:
-            return None
-        # Условие для случаев вида "20170001" или "20171200".
-        # Если валидный год, преобразовать в условную дату YYYY.01.01
-        if string[4:6] == '00' or string[6:] == '00':
-            string = string[:4] + '0101'
-    except TypeError:
-        pass
+# Bounded caches: repeated values (common in real data) cost one lookup
+# instead of a full pattern sweep; schema lookups avoid rebuilding the
+# key->func mapping per record.
+CONVERTER_CACHE_SIZE = 65536
+SCHEMA_CACHE_SIZE = 128
+
+
+def _normalize_year_like(string):
+    """Map partial dates like "20170001"/"20171200" to "20170101"."""
+    # Условие для случаев вида "20170001" или "20171200".
+    # Если валидный год, преобразовать в условную дату YYYY.01.01
+    if string[4:6] == '00' or string[6:] == '00':
+        return string[:4] + '0101'
+    return string
+
+
+@lru_cache(maxsize=CONVERTER_CACHE_SIZE)
+def _datetime_from_string(string):
     for pat in DATETIME_PATTERNS:
         try:
             return datetime.datetime.strptime(string, pat)
-        except (ValueError, TypeError):
+        except ValueError:
             continue
-    #    logging.debug('%s is not datetime', string)
     return None
 
 
-# FIXME: This is very slow simplified date processing without known date
-# pattern for each record. It should be rewritten to speed up dates processing
-def convert_to_date(string):
-    """Resource consuming but effective date conversion"""
-    try:
-        if len(string) == 0:
-            return None
-        # Условие для случаев вида "20170001" или "20171200".
-        # Если валидный год, преобразовать в условную дату YYYY.01.01
-        if string[4:6] == '00' or string[6:] == '00':
-            string = string[:4] + '0101'
-    except TypeError:
-        pass
+@lru_cache(maxsize=CONVERTER_CACHE_SIZE)
+def _date_from_string(string):
     for pat in DATE_PATTERNS_SHORT:
         try:
             return datetime.datetime.strptime(string, pat)
-        except (ValueError, TypeError):
+        except ValueError:
             continue
-    #    logging.debug('%s is not datetime', string)
     return None
+
+
+def convert_to_datetime(value):
+    """Convert a string to a datetime; return None when unparseable.
+
+    Results are cached per distinct normalized string, so repeated values and
+    schema-inference sampling share one pattern sweep.
+    """
+    if not isinstance(value, str) or not value:
+        return None
+    return _datetime_from_string(_normalize_year_like(value))
+
+
+def convert_to_date(value):
+    """Convert a string to a date; return None when unparseable.
+
+    Results are cached per distinct normalized string.
+    """
+    if not isinstance(value, str) or not value:
+        return None
+    return _date_from_string(_normalize_year_like(value))
 
 
 def convert_to_int(value: Any) -> Optional[int]:
@@ -131,7 +145,7 @@ def convert_to_int(value: Any) -> Optional[int]:
     try:
         return int(value)
     except (ValueError, TypeError) as error:
-        logging.info('Failed to convert to int: %s', error)
+        logging.debug('Failed to convert to int: %s', error)
         return None
 
 
@@ -148,7 +162,7 @@ def convert_to_float(value: Any) -> Optional[float]:
     try:
         return float(value)
     except (ValueError, TypeError) as error:
-        logging.info('Failed to convert to float: %s', error)
+        logging.debug('Failed to convert to float: %s', error)
         return None
 
 
@@ -200,7 +214,6 @@ def map_document_fields(
                 else:
                     value = func(value)
         if found:
-            #            logging.info('%s %s', key, str(value))
             result[key] = value
             continue
         if isinstance(value, dict) and len(value):
@@ -244,24 +257,24 @@ def schema_to_func(schema):
     return output
 
 
-def simple_typemap_object(obj, schema=None):
-    """Convert object fields to the selected formats using data schema.
+@lru_cache(maxsize=SCHEMA_CACHE_SIZE)
+def _schema_funcs(schema_items):
+    """Cached (key, converter) pairs so per-record typemaps skip rebuilding."""
+    return tuple((key, TYPEMAP[typ]) for key, typ in schema_items)
 
-    #FIXME: This is very ineffective conversion function that try to detect
-    data formats without knowledge. It could be much much faster.
-    """
+
+def simple_typemap_object(obj, schema=None):
+    """Convert object fields to the selected formats using data schema."""
     if schema is None:
         schema = {}
-    schema_func = schema_to_func(schema)
     result = obj.copy()
-    datakeys = schema.keys()
-    for key in datakeys:
+    for key, func in _schema_funcs(tuple(schema.items())):
         if key in obj.keys():
-            result[key] = schema_func[key](obj[key]) if obj[key] is not None else None
+            result[key] = func(obj[key]) if obj[key] is not None else None
         else:
             try:
                 value = get_dict_value(obj, key)
-                result = set_dict_value(result, key, schema_func[key](value))
+                result = set_dict_value(result, key, func(value))
             except KeyError:
                 continue
     return result

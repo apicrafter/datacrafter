@@ -68,25 +68,19 @@ def set_dict_value(
         if build_path and prefix[0] not in adict.keys():
             adict[prefix[0]] = {}
         adict[prefix[0]] = set_dict_value(
-            adict[prefix[0]], key, value, prefix=prefix[1:])
+            adict[prefix[0]], key, value, prefix=prefix[1:],
+            build_path=build_path)
         return adict
     if isinstance(adict, list):
-        result = []
         for v in adict:
-            res = set_dict_value(
-                v[prefix[0]], key, value, prefix=prefix[1:])
-            if res:
-                result.extend(res)
-            return result
-        adict[prefix[0]] = set_dict_value(
-            adict[0][prefix[0]], key, value, prefix=prefix[1:])
+            if not isinstance(v, dict):
+                continue
+            if prefix[0] not in v:
+                if not build_path:
+                    continue
+                v[prefix[0]] = {}
+            set_dict_value(
+                v[prefix[0]], key, value, prefix=prefix[1:],
+                build_path=build_path)
         return adict
     return None
-
-
-def update_dict_values(left_dict: dict, params_dict: dict) -> dict:
-    """Used to update values of hierarhic dicts in python with params
-    with dots as splitter"""
-    for k, v in params_dict.items():
-        left_dict = set_dict_value(left_dict, k, v)
-    return left_dict

@@ -4,7 +4,7 @@ try:
     HAS_BSON = True
 except ImportError:
     HAS_BSON = False
-    BSON = None
+    BSON = None  # type: ignore[assignment,misc]
 
 from .._registry import register_destination
 from .base import BaseFileDestination
@@ -13,6 +13,8 @@ from .base import BaseFileDestination
 @register_destination("file-bson")
 class BSONDestination(BaseFileDestination):
     """BSON file destination implementation."""
+    FILE_EXTENSION = 'bson'
+
     def __init__(self, filename, compression=None):
         if not HAS_BSON:
             raise ImportError(

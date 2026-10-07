@@ -21,7 +21,6 @@ def read_single_row(rownum, ncols, datemode, keys, sheet):
         ct = sheet.cell_type(rownum, i)
         cell_value = sheet.cell_value(rownum, i)
         if ct == xlrd.XL_CELL_DATE:
-            # Returns a tuple.
             dt_tuple = xlrd.xldate_as_tuple(cell_value, datemode)
             # Create datetime object from this tuple.
             get_col = str(datetime.datetime(
@@ -41,6 +40,18 @@ def read_single_row(rownum, ncols, datemode, keys, sheet):
 @register_source("xls")
 class XLSSource(BaseFileSource):
     """XLS source implementation."""
+
+    @classmethod
+    def from_config(cls, filename=None, stream=None, options=None):
+        options = options or {}
+        if not options.get('keys'):
+            raise ValueError(
+                f"XLS source requires the 'keys' option; got: {sorted(options)}")
+        return cls(
+            filename=filename,
+            keys=options['keys'].split(','),
+            start_line=options.get('start_line', 0))
+
     def __init__(self, filename=None, stream=None, keys=None, page=0, start_line=1):
         if not HAS_XLRD:
             raise ImportError(
@@ -78,16 +89,3 @@ class XLSSource(BaseFileSource):
             self.keys, self.sheet)
         self.pos += 1
         return row
-
-    def read_bulk(self, num):
-        """Read bulk XLS records"""
-        chunk = []
-        ncols = self.sheet.ncols
-        datemode = self.workbook.datemode
-        for _ in range(0, num):
-            if self.pos >= self.sheet.nrows:
-                raise StopIteration
-            row = read_single_row(self.pos, ncols, datemode, self.keys, self.sheet)
-            chunk.append(row)
-            self.pos += 1
-        return chunk

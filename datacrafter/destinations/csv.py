@@ -8,6 +8,15 @@ from .base import BaseFileDestination
 @register_destination("file-csv")
 class CSVDestination(BaseFileDestination):
     """CSV destination implementation."""
+    FILE_EXTENSION = 'csv'
+
+    @classmethod
+    def _extra_config_kwargs(cls, options):
+        return {
+            'delimiter': options.get('delimiter', ','),
+            'quotechar': options.get('quotechar', '"'),
+        }
+
     def __init__(
             self, filename, keys=None, delimiter=',', quotechar='"',
             compression=None):

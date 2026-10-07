@@ -24,6 +24,10 @@ the processor, and the destination.
 `--dry-run` lists every `extractors:` entry (and keeps singular `extractor` as
 the first spec).
 
+If writing or finalizing the destination fails (for example a flush error on
+close), the run exits non-zero and `state.json` records the failed
+`destination` stage with the error text.
+
 ```bash
 datacrafter run -v
 datacrafter run --dry-run --path examples/csv-url

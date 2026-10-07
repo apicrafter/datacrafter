@@ -13,16 +13,18 @@ module.
 """
 from typing import Callable, Dict, List, Type
 
+from .errors import DataCrafterError
 
-class UnknownSourceTypeError(KeyError):
+
+class UnknownSourceTypeError(DataCrafterError):
     """Raised when a source config ``type`` is not registered."""
 
 
-class UnknownDestinationTypeError(KeyError):
+class UnknownDestinationTypeError(DataCrafterError):
     """Raised when a destination config ``type`` is not registered."""
 
 
-class UnknownExtractorTypeError(KeyError):
+class UnknownExtractorTypeError(DataCrafterError):
     """Raised when an extractor config ``type`` is not registered."""
 
 

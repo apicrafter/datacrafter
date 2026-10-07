@@ -13,6 +13,16 @@ from .zipped import ZIPSourceWrapper
 
 @register_source("zipxml")
 class ZIPXMLSource(ZIPSourceWrapper):
+
+    @classmethod
+    def from_config(cls, filename=None, stream=None, options=None):
+        options = options or {}
+        if 'tagname' not in options:
+            raise ValueError(
+                f"ZIP XML source requires the 'tagname' option; "
+                f"got: {sorted(options)}")
+        return cls(filename=filename, tagname=options['tagname'])
+
     """ZIP XML source implementation."""
     def __init__(self, filename=None, tagname=None, prefix_strip=True):
         if not HAS_LXML:

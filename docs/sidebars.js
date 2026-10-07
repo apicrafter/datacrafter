@@ -81,6 +81,7 @@ const sidebars = {
       label: 'Development',
       items: [
         'development/contributing',
+        'development/code-quality',
         'development/community',
       ],
     },

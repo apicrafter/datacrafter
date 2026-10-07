@@ -54,10 +54,29 @@ extractors:
     type: rss
     config:
       url: https://example.com/feed.xml
+      download_enclosures: false   # true: fetch enclosure files into current/
   - name: catalog
     type: dcat
     config:
       url: https://example.com/catalog.json
+      download: false              # true: fetch distribution files
+      format: csv                  # only distributions matching this format
 ```
+
+## Download options
+
+URL downloads accept optional keys in `config` (they apply to `url`,
+`urlbypattern`, and feed/catalog downloads):
+
+```yaml
+config:
+  url: https://example.com/data.csv
+  timeout: 60          # request timeout in seconds (default: 30)
+  verify_tls: false    # only for trusted endpoints; logs a warning
+  # aria2: true        # hand the download to aria2 (invoked without a shell)
+  # aria2path: aria2c  # explicit aria2 binary path
+```
+
+TLS verification is on by default. See [Security](/configuration/security).
 
 Concepts: [Extractors](/concepts/extractors).

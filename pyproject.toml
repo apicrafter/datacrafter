@@ -58,6 +58,7 @@ zip-safe = false
 
 [project.optional-dependencies]
 parquet = ["pyarrow>=14.0.0"]
+compression = ["zstandard>=0.18.0"]
 
 [tool.ruff]
 line-length = 88
@@ -75,10 +76,6 @@ ignore = ["E501"]
 "tests/**" = ["F401", "E402"]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 ignore_missing_imports = true
-files = [
-    "datacrafter/_registry.py",
-    "datacrafter/sources/base.py",
-    "datacrafter/destinations/base.py",
-]
+files = ["datacrafter"]

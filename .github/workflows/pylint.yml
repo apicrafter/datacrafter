@@ -1,24 +1,40 @@
 name: Pylint
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+        cache: pip
+        cache-dependency-path: |
+          requirements.txt
+          requirements-dev.txt
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pylint
+        # Pylint pins mirror requirements-dev.txt: pylint 4.x dropped 3.9.
+        pip install "pylint>=3.3.0,<4; python_version < '3.10'" \
+                    "pylint>=4.0.0; python_version >= '3.10'"
         pip install -r requirements.txt
     - name: Analysing the code with pylint
-      run: |
-        pylint $(git ls-files '*.py')
+      # Match README/CONTRIBUTING (`pylint datacrafter/`). Style is covered by
+      # ruff; this job fails only on error/fatal messages.
+      run: pylint --errors-only datacrafter

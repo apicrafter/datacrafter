@@ -47,23 +47,14 @@ class ZIPSourceWrapper(BaseSource):
             raise StopIteration from e
 
     def __iter__(self):
+        if self.current_file:
+            self.current_file.close()
         self.filenum = 0
         filename = self.filenames[self.filenum]
         self.current_file = self.fobj.open(filename, mode=self.mode)
+        self.filepos = 0
         return self
 
     def read_single(self):
         """Not implemented single record read"""
         raise NotImplementedError
-
-    def read_bulk(self, num):
-        """Read bulk records"""
-        chunk = []
-        n = 0
-        while n < num:
-            n += 1
-            try:
-                chunk.append(self.read())
-            except StopIteration:
-                return chunk
-        return chunk

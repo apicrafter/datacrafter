@@ -7,6 +7,7 @@
 ## Features
 
 - **NoSQL-first**: JSON Lines and BSON are the native intermediate formats
+- **Compressed inputs**: `.gz` / `.bz2` / `.xz` / `.zst` files are read transparently by stream-capable sources
 - **CLI-first YAML projects**: declare extract → process → load in `datacrafter.yml`
 - **File and URL extraction**: CSV, JSON, JSONL, XML, XLS/XLSX, ZIP+XML, patterned HTML indexes, RSS/Atom, DCAT catalogs, APIBackuper, trusted Python `collect()` scripts
 - **Record transforms**: `keymap`, `typemap`, custom Python `process(record)`, plus optional `autotype` (sample-based type inference) and `autoid` (stable `_id`)
@@ -317,12 +318,15 @@ destination:
 ### Running Tests
 
 ```bash
-# Install dev dependencies (includes pytest, coverage, pip-audit)
+# Install dev dependencies (includes pytest, coverage, mypy, pip-audit)
 pip install -r requirements-dev.txt
 pip install -e .
 
-# Run the test suite with coverage (enforces a 50% floor in .coveragerc)
+# Fast local test run (no coverage artifacts)
 pytest
+
+# With coverage — CI enforces the 80% floor from .coveragerc
+pytest --cov=datacrafter --cov-report=term-missing
 
 # Audit dependencies for known vulnerabilities
 pip-audit -r requirements.txt
@@ -337,8 +341,8 @@ pylint datacrafter/
 # Linting with ruff (also run via pre-commit)
 ruff check datacrafter tests
 
-# Type checking (if using mypy)
-mypy datacrafter/
+# Type checking (whole package, also gated in CI)
+mypy datacrafter
 ```
 
 ### Building & Packaging

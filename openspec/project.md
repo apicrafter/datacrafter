@@ -9,7 +9,7 @@ or databases (MongoDB, ArangoDB, CouchDB, Meilisearch). Currently in alpha stage
 ## Tech Stack
 - **Language:** Python 3.9+ (CI matrix 3.9–3.13)
 - **CLI framework:** Typer
-- **Data formats:** orjson, jsonlines, pymongo (BSON), openpyxl, xlrd, lxml
+- **Data formats:** pymongo (BSON), openpyxl, xlrd, lxml; optional: zstandard, pyarrow
 - **Networking:** requests, beautifulsoup4
 - **Config:** PyYAML (`datacrafter.yml`)
 - **Packaging:** PEP 621 `pyproject.toml` (setuptools); `setup.py` is a shim

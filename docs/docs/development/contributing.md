@@ -25,13 +25,17 @@ Python 3.9+ is required.
 ## Tests and lint
 
 ```bash
-pytest
-pylint datacrafter/
+pytest                                    # fast local run
+pytest --cov=datacrafter                  # with coverage
+pylint --errors-only datacrafter
 ruff check datacrafter tests
+mypy datacrafter
 pip-audit -r requirements.txt
 ```
 
-Coverage is gated (currently 80%). External databases must be mocked.
+CI gates tests + coverage (80% floor), ruff, mypy (whole package), pylint
+(errors-only), and pip-audit on the resolved environment. External databases
+must be mocked.
 
 ## Documentation site
 

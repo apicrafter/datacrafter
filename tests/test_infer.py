@@ -1,7 +1,11 @@
 """Tests for type inference and JSONL analysis."""
 from datacrafter.common.infer import (
-    analyze_records, infer_field_types, infer_value_type, merge_types,
-    stable_record_id)
+    analyze_records,
+    infer_field_types,
+    infer_value_type,
+    merge_types,
+    stable_record_id,
+)
 
 
 def test_infer_value_types():

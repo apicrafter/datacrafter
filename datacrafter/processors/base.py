@@ -9,53 +9,12 @@ import json
 import logging
 import os
 import time
+from dataclasses import dataclass, field, fields
 from itertools import chain
 from runpy import run_path
+from typing import Optional
 
-try:
-    from tqdm import tqdm
-    TQDM_AVAILABLE = True
-except ImportError:
-    TQDM_AVAILABLE = False
-    # Fallback if tqdm is not available
-    class TqdmFallback:
-        """Fallback class that mimics tqdm interface when tqdm is not installed"""
-        def __init__(self, iterable=None, total=None, desc=None, **_kwargs):
-            self.iterable = iterable
-            self.total = total
-            self.desc = desc
-            self.n = 0
-
-        def __iter__(self):
-            """Support iteration when used as wrapper"""
-            if self.iterable is not None:
-                for item in self.iterable:
-                    yield item
-            else:
-                # No iterable provided, act as empty iterator
-                return iter([])
-
-        def __enter__(self):
-            """Support context manager protocol"""
-            return self
-
-        def __exit__(self, exc_type, exc_val, exc_tb):
-            """Support context manager protocol"""
-            return False
-
-        def update(self, n=1):
-            """Stub for update method"""
-            self.n += n
-
-        def close(self):
-            """Stub for close method"""
-            pass
-
-        def set_postfix(self, *args, **kwargs):
-            """Stub for set_postfix method"""
-            pass
-
-    tqdm = TqdmFallback
+from tqdm import tqdm
 
 from ..common.infer import infer_field_types, stable_record_id
 from ..common.mappers import map_keys, simple_typemap_object
@@ -68,9 +27,10 @@ from ..constants import (
     ERROR_STRATEGY_RETRY,
     ERROR_STRATEGY_SKIP,
 )
+from ..errors import DataCrafterError
 
 
-class ProcessingError(Exception):
+class ProcessingError(DataCrafterError):
     """Base exception for processing errors"""
     pass
 
@@ -196,20 +156,19 @@ class DataPipeline:
                         step_name=step_name
                     )
             except Exception as error:
-                error_msg = (
-                    f"Error in step {step_name} "
-                    f"(step {n}/{len(self.steps)}): {str(error)}"
-                )
-                logging.error(error_msg)
-
                 if self.error_strategy in (
                         ERROR_STRATEGY_FAIL, ERROR_STRATEGY_RETRY):
+                    error_msg = (
+                        f"Error in step {step_name} "
+                        f"(step {n}/{len(self.steps)}): {str(error)}"
+                    )
                     raise RecordProcessingError(
                         error_msg,
                         record=record,
                         step_name=step_name
                     ) from error
-                logging.warning("Skipping record due to error in %s", step_name)
+                logging.warning(
+                    "Skipping record due to error in %s: %s", step_name, error)
                 return None
         return record
 
@@ -246,21 +205,68 @@ DEFAULT_CONFIG_PARAMS = {'autoid': {'type': bool, 'default': False},
                          },
                          }
 
-DEFAULT_CONFIG = {'config': {}}
+DEFAULT_CONFIG: dict = {'config': {}}
+
+
+@dataclass
+class ProcessorConfig:
+    """Self-contained processor configuration.
+
+    Mirrors ``DEFAULT_CONFIG_PARAMS`` plus the keymap/typemap/custom sections
+    of the ``processor:`` YAML block, so the processor does not need the
+    Project orchestrator to run.
+    """
+    autoid: bool = False
+    autotype: bool = False
+    autotype_sample: int = 100
+    autoid_fields: Optional[list] = field(default=None)
+    skip_lines: Optional[int] = None
+    error_strategy: str = ERROR_STRATEGY_SKIP
+    max_retries: int = DEFAULT_MAX_RETRIES
+    keymap: Optional[dict] = None
+    typemap: Optional[dict] = None
+    custom: Optional[dict] = None
+
+    @classmethod
+    def from_project_config(cls, processor_section):
+        """Build a config from the ``processor:`` YAML section."""
+        section = processor_section if isinstance(processor_section, dict) else {}
+        raw_config = section.get('config')
+        if not isinstance(raw_config, dict):
+            raw_config = {}
+        known = {field_.name for field_ in fields(cls)}
+        kwargs = {key: value for key, value in raw_config.items() if key in known}
+        for name in ('keymap', 'typemap', 'custom'):
+            if isinstance(section.get(name), dict):
+                kwargs[name] = section[name]
+        return cls(**kwargs)
 
 
 class CommonProcessor(BaseProcessor):
-    """Implementation of common operations"""
+    """Implementation of common operations.
 
-    def __init__(self, project):  # , destination):
-        self.project = project
-        if 'processor' in self.project.project.keys():
-            self.params = self.project.project['processor']
+    Accepts either a :class:`ProcessorConfig` plus explicit ``project_path`` /
+    ``output`` / ``state`` arguments (library usage, no Project required), or
+    a Project orchestrator whose ``processor:`` section is read as config.
+    """
+
+    def __init__(self, config, project_path=None, output=None, state=None):
+        if isinstance(config, ProcessorConfig):
+            self.config = config
+            self.project = None
         else:
-            self.params = {'config': {}}
-        if not isinstance(self.params.get('config'), dict):
-            self.params['config'] = {}
-        #        self.destination = destination
+            # Backwards-compatible Project-based construction.
+            self.project = config
+            section = config.project.get('processor') \
+                if getattr(config, 'project', None) else None
+            self.config = ProcessorConfig.from_project_config(section)
+            project_path = getattr(config, 'project_path', project_path)
+            output = getattr(config, 'output', output)
+            state = getattr(config, 'state', state)
+        self.project_path = project_path
+        self.output = output
+        self.state = state
+        self.params = {'config': {}}
         self.__set_default_config()
         error_strategy = getattr(self, 'error_strategy', ERROR_STRATEGY_SKIP)
         self.pipeline = DataPipeline(error_strategy=error_strategy)
@@ -273,37 +279,42 @@ class CommonProcessor(BaseProcessor):
             'errors': []
         }
 
-        if 'keymap' in self.params.keys():
-            if self.params['keymap']['type'] == 'position':
-                keys = self.params['keymap']['keys'].split(',')
+        if self.config.keymap:
+            if self.config.keymap['type'] == 'position':
+                keys = self.config.keymap['keys'].split(',')
                 self.pipeline.add_step(KeymapPositionStep(keys))
-            elif self.params['keymap']['type'] == 'names':
+            elif self.config.keymap['type'] == 'names':
                 keymap_schema = {}
-                for key in self.params['keymap']['fields']:
-                    keymap_schema[key] = {'name': self.params['keymap']['fields'][key]}
+                for key in self.config.keymap['fields']:
+                    keymap_schema[key] = {'name': self.config.keymap['fields'][key]}
                 self.pipeline.add_step(KeymapFieldsStep(keys=keymap_schema))
                 logging.info('Added keymapping step with schema %s', keymap_schema)
 
-        if 'typemap' in self.params.keys():
-            self.pipeline.add_step(TypemapStep(self.params['typemap']))
+        if self.config.typemap:
+            self.pipeline.add_step(TypemapStep(self.config.typemap))
             logging.info(
                 'Added type mapping step with schema %s',
-                str(self.params['typemap']))
+                str(self.config.typemap))
 
-        if 'custom' in self.params.keys():
+        if self.config.custom:
             self.pipeline.add_step(
                 CustomCodeStep(
-                    customtype=self.params['custom']['type'],
-                    code=self.params['custom']['code'],
-                    project_path=self.project.project_path))
+                    customtype=self.config.custom['type'],
+                    code=self.config.custom['code'],
+                    project_path=self.project_path))
             logging.info(
                 'Added custom code script step %s',
-                str(self.params['custom']['code']))
+                str(self.config.custom['code']))
 
         if getattr(self, 'autoid', False):
-            fields = getattr(self, 'autoid_fields', None) or []
-            if isinstance(fields, str):
-                fields = [part.strip() for part in fields.split(',') if part.strip()]
+            raw_fields = getattr(self, 'autoid_fields', None)
+            if isinstance(raw_fields, str):
+                fields = [
+                    part.strip() for part in raw_fields.split(',') if part.strip()
+                ]
+            else:
+                fields = list(raw_fields or [])
+            self.autoid_fields = fields
             self.pipeline.add_step(AutoidStep(fields=fields))
             logging.info('Added autoid step fields=%s', fields)
 
@@ -311,13 +322,9 @@ class CommonProcessor(BaseProcessor):
         self._error_path = None
 
     def __set_default_config(self):
-        """Sets default parameters or parameters from YAML config"""
+        """Expose config values as processor attributes (historical API)."""
         for param in DEFAULT_CONFIG_PARAMS:
-            if param not in self.params['config'].keys():
-                value = DEFAULT_CONFIG_PARAMS[param]['default']
-            else:
-                value = self.params['config'][param]
-            setattr(self, param, value)
+            setattr(self, param, getattr(self.config, param))
 
     def _iter_records(self, source):
         """Yield records from a source iterable."""
@@ -335,7 +342,7 @@ class CommonProcessor(BaseProcessor):
     def _install_autotype(self, mapped_sample):
         """Merge inferred types with explicit typemap (explicit wins)."""
         inferred = infer_field_types(mapped_sample)
-        explicit = self.params.get('typemap') or {}
+        explicit = self.config.typemap or {}
         merged = {**inferred, **explicit}
         if not merged:
             return merged
@@ -373,7 +380,7 @@ class CommonProcessor(BaseProcessor):
         yield from chain(sample, iterator)
 
     def _open_error_file(self):
-        output = getattr(self.project, 'output', None)
+        output = self.output
         if not output:
             return
         try:
@@ -456,7 +463,7 @@ class CommonProcessor(BaseProcessor):
         """Create a tqdm progress bar when useful; otherwise return None."""
         root_logger = logging.getLogger()
         quiet_mode = root_logger.level >= logging.ERROR
-        if not (show_progress and TQDM_AVAILABLE and not quiet_mode):
+        if not (show_progress and not quiet_mode):
             return None
         total_known = self._source_length(source)
         if total_known is None:
@@ -508,7 +515,7 @@ class CommonProcessor(BaseProcessor):
                 logging.warning("First error: %s", self.stats['errors'][0])
 
     def _record_processor_state(self, status):
-        state = getattr(self.project, 'state', None)
+        state = self.state
         if state is None or not hasattr(state, 'add'):
             return
         state.add('processor', status=status, results={

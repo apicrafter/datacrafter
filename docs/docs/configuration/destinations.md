@@ -10,10 +10,10 @@ destination:
   type: file-jsonl     # see table
   fileprefix: output   # required for file-* types
   compress: gz         # optional: gz, bz2, xz, zip, zst
-  storage: local
 ```
 
-`compress` and `compression` are both accepted.
+`compress` and `compression` are both accepted. `zst` needs the
+`compression` extra: `pip install "datacrafter[compression]"`.
 
 ## File types
 

@@ -8,10 +8,10 @@ from unittest import mock
 
 import pytest
 
-from datacrafter.destinations.mongo import MongoDBDestination
 from datacrafter.destinations.arango import ArangoDBDestination
 from datacrafter.destinations.couchdb import CouchDBDestination
 from datacrafter.destinations.meilisearch import MeilisearchDestination
+from datacrafter.destinations.mongo import MongoDBDestination
 
 pytestmark = pytest.mark.backend
 

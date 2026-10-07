@@ -18,11 +18,14 @@ class ProjectState:
             self.stages = []
             self.last_stage = None
 
-    def add(self, name, status="success", results=None):
+    def add(self, name, status="success", results=None, error=None):
         """Add stage"""
         if results is None:
             results = {}
-        self.stages.append({'name': name, 'status': status, 'results': results})
+        stage = {'name': name, 'status': status, 'results': results}
+        if error is not None:
+            stage['error'] = error
+        self.stages.append(stage)
         self.last_stage = name
         if self.autosave:
             self.save(self.filename)
@@ -33,7 +36,6 @@ class ProjectState:
             self.data = load(f)
         self.stages = self.data['stages']
         self.last_stage = self.stages[-1]['name']
-        pass
 
     def save(self, filename=None):
         """Save project state to file."""

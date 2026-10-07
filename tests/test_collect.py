@@ -3,7 +3,7 @@
 These tests cover the security-sensitive behavior:
 - aria2 is invoked via ``subprocess.run`` with an argument list (no shell string)
 - TLS verification is enabled by default
-- ``get_file_by_pattern``/``get_file_by_name`` thread ``verify_tls`` through
+- ``get_file_by_pattern`` threads ``verify_tls`` through
 - ``load_config`` uses ``yaml.safe_load``
 No real network calls are made; ``requests`` and ``subprocess`` are mocked.
 """
@@ -13,8 +13,8 @@ from unittest import mock
 
 import pytest
 
-from datacrafter.common import collect
 from datacrafter.cmds.project import load_config
+from datacrafter.common import collect
 
 
 class _FakeResponse:
@@ -153,25 +153,6 @@ class TestFetchUrlContent:
             'data-', out, file_type='csv', force=True)
         assert result == out
         assert downloaded['url'] == 'https://example.com/data-2026.csv'
-
-    def test_get_file_by_name_joins_relative_href(
-            self, tmp_path, monkeypatch):
-        html = b'<html><a href="files/data.csv">dataset</a></html>'
-        monkeypatch.setattr(
-            collect, '_fetch_url_content', lambda *_a, **_k: html)
-
-        def fake_get(url, filename, **_kwargs):
-            with open(filename, 'wb') as file_obj:
-                file_obj.write(b'ok')
-            return filename
-
-        monkeypatch.setattr(collect, 'get_file', fake_get)
-        result = collect.get_file_by_name(
-            str(tmp_path), str(tmp_path), 'https://example.com/page',
-            name='dataset', file_prefix='gov', file_type='csv')
-        assert result.endswith('gov_current.csv')
-        assert os.path.exists(result)
-
 
 class TestLoadConfigSafe:
     def test_load_config_uses_safe_load(self, tmp_path):

@@ -12,14 +12,13 @@ Destinations receive transformed records. Types:
 **Stores:** `mongodb`, `arangodb`, `couchdb`, `meilisearch`.
 
 File names are `fileprefix` plus the type extension. Optional compression:
-`xz`, `gz`, `bz2`, `zip`, `zst`. Both `compress` and `compression` keys work.
-Storage is `local` today.
+`xz`, `gz`, `bz2`, `zip`, `zst` (both `compress` and `compression` keys work;
+`zst` needs the `compression` extra).
 
 ```yaml
 destination:
   type: file-bson
   compress: xz
-  storage: local
   fileprefix: fnspaytax
 ```
 

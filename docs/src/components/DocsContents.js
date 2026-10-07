@@ -72,9 +72,10 @@ const sections = [
   {
     title: 'Development',
     to: '/development/contributing',
-    description: 'Contributing, community, and license.',
+    description: 'Contributing, code quality guide, community, and license.',
     links: [
       {label: 'Contributing', to: '/development/contributing'},
+      {label: 'Code quality', to: '/development/code-quality'},
       {label: 'Community', to: '/development/community'},
       {label: 'License', to: '/license'},
     ],

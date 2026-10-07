@@ -24,7 +24,6 @@ class CouchDBDestination(BaseDBDestination):
         super().__init__(connstr, dbname, tablename, username, password)
         self.client = pycouchdb.Server(connstr)
         self.coll = self.client.database(dbname)
-#        self.coll = self.db.collection(tablename)
 
     def id(self):
         """Return destination identifier"""

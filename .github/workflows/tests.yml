@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    # Weekly: catch newly-published CVEs even without activity.
+    - cron: '17 4 * * 1'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -35,11 +42,13 @@ jobs:
           pip install -e .
 
       - name: Run tests with coverage
-        run: pytest
+        # Coverage flags live here (not in pytest.ini addopts) so local runs
+        # stay fast and artifact-free.
+        run: pytest --cov=datacrafter --cov-report=term-missing --cov-report=xml
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.12'
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./coverage.xml
           fail_ci_if_error: false
@@ -55,7 +64,27 @@ jobs:
       - name: Install ruff
         run: pip install ruff
       - name: Run ruff
-        run: ruff check datacrafter
+        run: ruff check datacrafter tests
+
+  mypy:
+    name: mypy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install package and dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e .
+      - name: Run mypy
+        run: mypy datacrafter
 
   audit:
     name: Dependency audit (pip-audit)
@@ -70,12 +99,17 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install pip-audit
+      - name: Install package and dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e .
           pip install pip-audit
 
-      - name: Audit dependencies
-        # Audits the runtime requirements floors. Newly-discovered advisories
-        # fail the job so they are addressed promptly.
+      - name: Audit resolved environment
+        # Newly-discovered advisories in the actually-installed versions fail
+        # the job so they are addressed promptly.
+        run: pip-audit
+
+      - name: Audit requirements floors
         run: pip-audit -r requirements.txt

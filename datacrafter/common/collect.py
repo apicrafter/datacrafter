@@ -1,9 +1,7 @@
 """Data collection module for downloading files from URLs."""
 import logging
 import os
-import shutil
 import subprocess
-import tempfile
 import time
 from functools import wraps
 from urllib import parse
@@ -23,6 +21,22 @@ DEFAULT_USER_AGENT = (
     'Gecko/20100101 Firefox/68.0')
 DEFAULT_CHUNK_SIZE = 4096
 DEFAULT_TIMEOUT = 30
+
+
+def redact_url(url):
+    """Strip the query string from a URL (it may carry credentials)."""
+    parts = parse.urlsplit(str(url))
+    if not parts.query:
+        return str(url)
+    return parse.urlunsplit(
+        (parts.scheme, parts.netloc, parts.path, '', parts.fragment))
+
+
+def _display_url(url):
+    """Return the URL to show in logs: redacted unless DEBUG is enabled."""
+    if logging.getLogger().isEnabledFor(logging.DEBUG):
+        return str(url)
+    return redact_url(url)
 
 
 def retry_network_operation(
@@ -66,11 +80,12 @@ def get_file(url, filename, aria2=False, aria2path=None, timeout=DEFAULT_TIMEOUT
     only when connecting to a trusted endpoint with a self-signed/invalid cert; a
     warning is logged in that case.
     """
-    logging.info('Retrieving %s from %s', filename, url)
+    logging.info('Retrieving %s from %s', filename, _display_url(url))
     if not verify_tls:
         logging.warning(
             'TLS certificate verification disabled for download of %s; this is '
-            'insecure and should only be used for trusted endpoints.', url)
+            'insecure and should only be used for trusted endpoints.',
+            _display_url(url))
     page = None
     try:
         page = requests.get(
@@ -97,11 +112,12 @@ def get_file(url, filename, aria2=False, aria2path=None, timeout=DEFAULT_TIMEOUT
             if dirpath:
                 cmd.extend(['-d', dirpath])
             cmd.extend(['--out', basename, url])
-            logging.info('Aria2 command: %s', cmd)
+            logging.info('Aria2 command: %s',
+                         [_display_url(arg) for arg in cmd])
             subprocess.run(cmd, check=True)
         return filename
     except requests.exceptions.RequestException as e:
-        error_msg = f'Failed to download {url}: {e}'
+        error_msg = f'Failed to download {_display_url(url)}: {e}'
         if hasattr(e, 'response') and e.response is not None:
             error_msg += f' (Status: {e.response.status_code})'
         logging.error(error_msg)
@@ -161,73 +177,14 @@ def get_file_by_pattern(
             get_file(
                 data_url, filename, aria2=aria2, aria2path=aria2path,
                 timeout=timeout, verify_tls=verify_tls)
-            logging.info('Downloaded %s to %s', data_url, filename)
+            logging.info('Downloaded %s to %s', _display_url(data_url), filename)
         else:
             logging.info('File %s already downloaded', filename)
 
         return filename
     except requests.exceptions.RequestException as e:
-        error_msg = f'Failed to fetch URL {url}: {e}'
+        error_msg = f'Failed to fetch URL {_display_url(url)}: {e}'
         if hasattr(e, 'response') and e.response is not None:
             error_msg += f' (Status: {e.response.status_code})'
         logging.error(error_msg)
-        raise
-
-
-def get_file_by_name(
-        current_path, _temp_path, url, name=None, prefix=None,
-        file_prefix=None, file_type=None, aria2=False, aria2path=None,
-        force=True, verify_tls=True):
-    """Collects specific file by it's name"""
-    temp_filepath = None
-    try:
-        html_data = _fetch_url_content(url, verify_tls=verify_tls)
-        soup = BeautifulSoup(html_data, features='lxml')
-        data_url = None
-        for u in soup.find_all('a'):
-            if name:
-                if u.text == name:
-                    data_url = u.get('href')
-                    break
-            elif prefix:
-                if u.text.find(prefix) > -1:
-                    data_url = u.get('href')
-                    break
-        if not data_url:
-            logging.info('Dataset url not found')
-            return None
-        if not is_absolute_url(data_url):
-            data_url = parse.urljoin(url, data_url)
-            filename = data_url.rsplit('/', 1)[-1]
-            logging.info('Downloading %s to %s', data_url, filename)
-            fd, temp_filepath = tempfile.mkstemp()
-            os.close(fd)
-            current_filepath = os.path.join(
-                current_path, f"{file_prefix}_current.{file_type}")
-            logging.info('Temp %s', temp_filepath)
-            if not os.path.exists(temp_filepath) or force:
-                get_file(data_url, temp_filepath, aria2=aria2, aria2path=aria2path,
-                         verify_tls=verify_tls)
-                logging.info('Downloaded %s to %s', data_url, filename)
-            else:
-                logging.info('File %s already downloaded', filename)
-            shutil.move(temp_filepath, current_filepath)
-            logging.debug('File %s moved to current', filename)
-            return current_filepath
-    except requests.exceptions.RequestException as e:
-        error_msg = f'Failed to fetch URL {url}: {e}'
-        if hasattr(e, 'response') and e.response is not None:
-            error_msg += f' (Status: {e.response.status_code})'
-        logging.error(error_msg)
-        raise
-    except Exception:
-        # Clean up temp file on error
-        if temp_filepath and os.path.exists(temp_filepath):
-            try:
-                os.unlink(temp_filepath)
-                logging.debug('Cleaned up temp file: %s', temp_filepath)
-            except OSError as cleanup_err:
-                logging.warning(
-                    'Failed to clean up temp file %s: %s',
-                    temp_filepath, cleanup_err)
         raise

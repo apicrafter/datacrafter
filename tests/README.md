@@ -26,9 +26,8 @@ pytest tests/test_common.py::TestGetDictValue::test_simple_key
 
 ### Run by marker
 ```bash
-pytest -m unit          # Run only unit tests
 pytest -m integration   # Run only integration tests
-pytest -m "not slow"    # Skip slow tests
+pytest -m "not backend" # Skip DB-destination tests (they run mocked by default)
 ```
 
 ## Test Structure
@@ -54,7 +53,7 @@ Common fixtures available in `conftest.py`:
 - `jsonl_file` - Temporary JSONL file
 - `csv_file` - Temporary CSV file
 - `state_file` - Temporary state file
-- `empty_state` - Empty project state
+- `recording_destination` - In-memory destination capturing write()/write_bulk()
 
 ## Coverage
 

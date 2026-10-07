@@ -8,7 +8,6 @@ This document describes the dependency management strategy for datacrafter.
 
 - **requirements.txt** - Runtime dependencies with minimum versions (the single source of
   truth; `pyproject.toml` reads this via `tool.setuptools.dynamic.dependencies`)
-- **requirements-pinned.txt** - Production dependencies with exact versions (for reproducible builds)
 - **requirements-dev.txt** - Development tools and test dependencies (also pulls in `requirements.txt`)
 - **pyproject.toml** - Package metadata and build configuration; runtime deps sourced from
   `requirements.txt` so the two never drift
@@ -43,33 +42,27 @@ pip-audit -r requirements.txt --desc
 3. `pyproject.toml` picks up the change automatically on the next build
 
 ### For Production
-1. Update `requirements-pinned.txt` with exact versions
-2. Test thoroughly before deployment
+1. Resolve and install the updated floors in a clean environment
+2. Test thoroughly before tagging a release
 3. Document any breaking changes
 
 ## Dependency Categories
 
 ### Core Dependencies
-- **chardet** - Character encoding detection
 - **typer** - CLI framework
-- **jsonlines** - JSON Lines file handling
-- **orjson** - Fast JSON parsing
-- **pandas** - Data manipulation
-- **pymongo** - MongoDB client
-- **qddate** - Date parsing
-- **tabulate** - Table formatting
+- **pymongo** - MongoDB client (BSON support)
 - **tqdm** - Progress bars
-- **validators** - Input validation
 - **xlrd** - Excel file reading
-- **openpyxl** - Excel file writing
+- **openpyxl** - Excel file reading/writing
 
 ### Network & Web
 - **requests** - HTTP library
 - **beautifulsoup4** - HTML parsing
 - **lxml** - XML/HTML processing
 
-### Data Processing
-- **dictquery** - Dictionary querying (optional, for advanced queries)
+### Optional Extras
+- **zstandard** (`pip install datacrafter[compression]`) - .zst compressed files
+- **pyarrow** (`pip install datacrafter[parquet]`) - Parquet destination
 
 ### Configuration
 - **pyyaml** - YAML parsing
@@ -79,21 +72,19 @@ pip-audit -r requirements.txt --desc
 
 ## Version Constraints
 
-- Use `>=` for minimum versions in development (allows patch updates)
-- Use `==` for exact versions in production (reproducible builds)
+- Use `>=` minimum version floors in `requirements.txt`
+- CI audits the resolved environment with pip-audit (PR-time and weekly)
 - Regularly update to latest patch versions for security
 
 ## Adding New Dependencies
 
 1. Add to `requirements.txt` with a `>=` minimum version (picks up in pyproject.toml automatically)
-2. Update `requirements-pinned.txt` with the resolved version if needed
-3. Document in this file
+2. Document in this file
 4. Run security scan: `pip-audit -r requirements.txt`
 
 ## Removing Dependencies
 
 1. Remove from `requirements.txt`
-2. Remove from `requirements-pinned.txt`
-3. Check for any remaining imports
-4. Update this documentation
+2. Check for any remaining imports
+3. Update this documentation
 

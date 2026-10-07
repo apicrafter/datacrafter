@@ -88,17 +88,25 @@ def parse_dcat(data):
 
 
 def _basename_from_url(url, fallback):
-    path = urlparse(url).path.rstrip('/')
-    name = os.path.basename(path) if path else ''
-    return name or fallback
+    """Derive a safe local filename from an untrusted enclosure/catalog URL.
+
+    Rejects empty names, ``.``, ``..`` and anything still containing path
+    separators (including backslashes) after normalization, so a crafted URL
+    cannot escape the destination directory.
+    """
+    path = urlparse(url).path.replace('\\', '/')
+    name = os.path.basename(path.rstrip('/'))
+    if name in ('', '.', '..'):
+        return fallback
+    return name
 
 
 def extract_rss(url, jsonl_path, current_dir, download_enclosures=False,
-                get_file_func=None):
+                get_file_func=None, **download_options):
     """Download a feed, write JSONL items, optionally fetch enclosures."""
     downloader = get_file_func or get_file
     feed_path = os.path.join(os.path.dirname(jsonl_path), '.feed.xml')
-    downloader(url, feed_path)
+    downloader(url, feed_path, **download_options)
     with open(feed_path, 'r', encoding='utf8') as file_obj:
         items = parse_feed(file_obj.read())
     _write_jsonl(jsonl_path, items)
@@ -112,7 +120,7 @@ def extract_rss(url, jsonl_path, current_dir, download_enclosures=False,
                 current_dir,
                 _basename_from_url(enclosure, f'enclosure-{index}'))
             try:
-                downloader(enclosure, dest)
+                downloader(enclosure, dest, **download_options)
                 results.append(
                     {'filename': dest, 'compressed': False, 'type': 'file'})
             except Exception as error:
@@ -121,11 +129,11 @@ def extract_rss(url, jsonl_path, current_dir, download_enclosures=False,
 
 
 def extract_dcat(url, jsonl_path, current_dir, download=False, format_filter=None,
-                 get_file_func=None):
+                 get_file_func=None, **download_options):
     """Download a DCAT JSON catalog, write datasets, optionally fetch files."""
     downloader = get_file_func or get_file
     catalog_path = os.path.join(os.path.dirname(jsonl_path), '.catalog.json')
-    downloader(url, catalog_path)
+    downloader(url, catalog_path, **download_options)
     with open(catalog_path, 'r', encoding='utf8') as file_obj:
         payload = json.load(file_obj)
     datasets = parse_dcat(payload)
@@ -150,7 +158,7 @@ def extract_dcat(url, jsonl_path, current_dir, download=False, format_filter=Non
                 _basename_from_url(file_url, f'distribution-{index}'))
             index += 1
             try:
-                downloader(file_url, dest)
+                downloader(file_url, dest, **download_options)
                 results.append(
                     {'filename': dest, 'compressed': False, 'type': 'file'})
             except Exception as error:

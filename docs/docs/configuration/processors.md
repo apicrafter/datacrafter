@@ -12,6 +12,7 @@ processor:
     error_strategy: skip   # skip | fail | retry
     max_retries: 3
     autoid: true
+    autoid_fields: code, name   # or a YAML list; _id derived from these fields
     autotype: false
   keymap:
     type: names        # names | position
@@ -36,6 +37,14 @@ Registered readers include `csv`, `json`, `jsonl`, `xml`, `xls`, `xlsx`,
 - `skip` — drop the record (written to `output/errors.jsonl`)
 - `fail` — stop the pipeline
 - `retry` — retry with backoff (`max_retries`)
+
+## Compressed inputs
+
+Source readers that consume streams (`csv`, `json`, `jsonl`, `xml`, `bson`)
+read compressed files directly: keep the original extension before the suffix
+(`data.csv.gz`, `data.xml.bz2`, `data.jsonl.xz`, `data.bson.zst`). Formats
+that need a real file (`xls`, `xlsx`, `zipxml`) must be extracted first. `zst`
+needs the `compression` extra.
 
 ## Custom code
 

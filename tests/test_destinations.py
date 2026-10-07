@@ -1,6 +1,7 @@
 """Tests for destination classes"""
-import os
 import json
+import os
+
 import pytest
 
 from datacrafter.destinations.jsonl import JSONLinesDestination
@@ -8,28 +9,28 @@ from datacrafter.destinations.jsonl import JSONLinesDestination
 
 class TestJSONLinesDestination:
     """Tests for JSONLinesDestination"""
-    
+
     def test_write_single_record(self, temp_dir):
         """Test writing a single record"""
         filename = os.path.join(temp_dir, 'output.jsonl')
         dest = JSONLinesDestination(filename=filename)
-        
+
         record = {'id': 1, 'name': 'Alice', 'age': 30}
         dest.write(record)
         dest.close()
-        
+
         # Verify file was written
         assert os.path.exists(filename)
         with open(filename, 'r', encoding='utf8') as f:
             line = f.readline()
             data = json.loads(line)
             assert data == record
-    
+
     def test_write_bulk_records(self, temp_dir):
         """Test writing bulk records"""
         filename = os.path.join(temp_dir, 'output.jsonl')
         dest = JSONLinesDestination(filename=filename)
-        
+
         records = [
             {'id': 1, 'name': 'Alice'},
             {'id': 2, 'name': 'Bob'},
@@ -37,7 +38,7 @@ class TestJSONLinesDestination:
         ]
         dest.write_bulk(records)
         dest.close()
-        
+
         # Verify all records were written
         assert os.path.exists(filename)
         with open(filename, 'r', encoding='utf8') as f:
@@ -46,7 +47,7 @@ class TestJSONLinesDestination:
             for i, line in enumerate(lines):
                 data = json.loads(line)
                 assert data == records[i]
-    
+
     def test_id(self, temp_dir):
         """Test destination ID"""
         filename = os.path.join(temp_dir, 'output.jsonl')
@@ -58,8 +59,9 @@ class TestJSONLinesDestination:
 class TestParquetDestination:
     def test_write_parquet(self, temp_dir):
         pytest.importorskip('pyarrow')
-        from datacrafter.destinations.parquet import ParquetDestination
         import pyarrow.parquet as pq
+
+        from datacrafter.destinations.parquet import ParquetDestination
 
         filename = os.path.join(temp_dir, 'output.parquet')
         dest = ParquetDestination(filename=filename)

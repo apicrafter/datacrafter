@@ -4,7 +4,7 @@ try:
     HAS_PYMONGO = True
 except ImportError:
     HAS_PYMONGO = False
-    MongoClient = None
+    MongoClient = None  # type: ignore[assignment,misc]
 
 from .._registry import register_destination
 from .base import BaseDBDestination
@@ -13,6 +13,8 @@ from .base import BaseDBDestination
 @register_destination("mongodb")
 class MongoDBDestination(BaseDBDestination):
     """MongoDB destination implementation."""
+    DEFAULT_CONNSTR = 'mongodb://localhost:27017'
+
     def __init__(self, connstr, dbname, tablename, username=None, password=None):
         """Init destination"""
         if not HAS_PYMONGO:

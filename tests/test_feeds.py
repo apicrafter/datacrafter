@@ -3,7 +3,11 @@ import json
 import os
 
 from datacrafter.extractors.feeds import (
-    extract_dcat, extract_rss, parse_dcat, parse_feed)
+    extract_dcat,
+    extract_rss,
+    parse_dcat,
+    parse_feed,
+)
 
 RSS = """<?xml version="1.0"?>
 <rss version="2.0"><channel>
@@ -48,8 +52,6 @@ def test_parse_dcat_us():
 
 
 def test_extract_rss_writes_jsonl(tmp_path):
-    feed = tmp_path / 'feed.xml'
-
     def fake_get(url, dest, **_kwargs):
         dest_dir = os.path.dirname(dest)
         os.makedirs(dest_dir, exist_ok=True)

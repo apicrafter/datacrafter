@@ -10,14 +10,14 @@ from datacrafter.extractors.base import BaseExtractor, DataCrafterConfigurationE
 
 class TestBaseExtractor:
     """Tests for BaseExtractor"""
-    
+
     def test_validate_missing_project(self, sample_config):
         """Test validation fails without project"""
         # Create extractor without project
         class MockProject:
             def __init__(self):
                 self.project = sample_config
-        
+
         project = MockProject()
         project.project['extractor'] = {
             'mode': 'singlefile',
@@ -26,13 +26,13 @@ class TestBaseExtractor:
             'force': True,
             'config': {}
         }
-        
+
         extractor = BaseExtractor(project)
         extractor.project = None  # Remove project to test validation
-        
+
         with pytest.raises(DataCrafterConfigurationError):
             extractor.validate()
-    
+
     def test_validate_missing_url(self, sample_project):
         """Test validation fails without URL for url method"""
         # Modify project config to have url method without url
@@ -51,12 +51,12 @@ class TestBaseExtractor:
         sample_project.project['extractor'] = {
             'mode': 'singlefile', 'type': 'file-csv',
             'method': 'urlbypattern', 'config': {}}
-        
+
         extractor = BaseExtractor(sample_project)
-        
+
         with pytest.raises(DataCrafterConfigurationError) as exc_info:
             extractor.validate()
-        
+
         error_msg = str(exc_info.value).lower()
         assert 'prefix' in error_msg or 'data_prefix' in error_msg
 
@@ -78,7 +78,7 @@ class TestBaseExtractor:
             return True
 
         monkeypatch.setattr(
-            'datacrafter.extractors.base.get_file', fake_get_file)
+            'datacrafter.extractors.file.get_file', fake_get_file)
         extractor = get_extractor(sample_project)
         extractor.run()
         assert extractor.results
@@ -105,7 +105,7 @@ class TestBaseExtractor:
             return True
 
         monkeypatch.setattr(
-            'datacrafter.extractors.base.get_file_by_pattern', fake_pattern)
+            'datacrafter.extractors.file.get_file_by_pattern', fake_pattern)
         extractor = get_extractor(sample_project)
         extractor.run()
         assert extractor.results
@@ -145,7 +145,7 @@ class TestBaseExtractor:
                 file_obj.write(feed)
             return True
 
-        monkeypatch.setattr('datacrafter.extractors.feeds.get_file', fake_get)
+        monkeypatch.setattr('datacrafter.extractors.rss.get_file', fake_get)
         sample_project.project['extractor'] = {
             'type': 'rss',
             'config': {'url': 'https://example.com/feed.xml'},
@@ -169,7 +169,7 @@ class TestBaseExtractor:
             written.append(pathname)
             return True
 
-        monkeypatch.setattr('datacrafter.extractors.base.get_file', fake_get)
+        monkeypatch.setattr('datacrafter.extractors.file.get_file', fake_get)
         sample_project.project['extractors'] = [
             {
                 'name': 'one',
@@ -213,7 +213,7 @@ class TestBaseExtractor:
                 json.dump(catalog, file_obj)
             return True
 
-        monkeypatch.setattr('datacrafter.extractors.feeds.get_file', fake_get)
+        monkeypatch.setattr('datacrafter.extractors.dcat.get_file', fake_get)
         sample_project.project['extractor'] = {
             'type': 'dcat',
             'config': {'url': 'https://example.com/data.json'},
@@ -228,7 +228,7 @@ class TestBaseExtractor:
 
     def test_run_api_missing_package(self, sample_project, monkeypatch):
         monkeypatch.setattr(
-            'datacrafter.extractors.base.HAS_APIBACKUPER', False)
+            'datacrafter.extractors.api.HAS_APIBACKUPER', False)
         sample_project.project['extractor'] = {
             'mode': 'api',
             'type': 'api',
@@ -241,7 +241,7 @@ class TestBaseExtractor:
 
     def test_run_api_missing_config_file(self, sample_project, monkeypatch):
         monkeypatch.setattr(
-            'datacrafter.extractors.base.HAS_APIBACKUPER', True)
+            'datacrafter.extractors.api.HAS_APIBACKUPER', True)
         sample_project.project['extractor'] = {
             'mode': 'api',
             'type': 'api',
@@ -258,7 +258,7 @@ class TestBaseExtractor:
 
     def test_run_api_mocked_builder(self, sample_project, monkeypatch):
         monkeypatch.setattr(
-            'datacrafter.extractors.base.HAS_APIBACKUPER', True)
+            'datacrafter.extractors.api.HAS_APIBACKUPER', True)
         os.makedirs(sample_project.storage, exist_ok=True)
         with open(
                 os.path.join(sample_project.storage, 'apibackuper.cfg'),
@@ -287,7 +287,7 @@ class TestBaseExtractor:
                     file_obj.write('{"id": 1}\n')
 
         monkeypatch.setattr(
-            'datacrafter.extractors.base.ProjectBuilder', FakeBuilder)
+            'datacrafter.extractors.api.ApiExtractor._project_builder', staticmethod(FakeBuilder))
         sample_project.project['extractor'] = {
             'mode': 'api',
             'type': 'api',

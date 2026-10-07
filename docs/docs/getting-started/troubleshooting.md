@@ -61,6 +61,13 @@ read JSONL under `output/` (or `current/`). Run the pipeline first, or point
 `output/errors.jsonl`. Custom scripts must define `process(record)` and live
 **inside the project directory**.
 
+## Run failed at the destination stage
+
+Write, flush, or finalize errors are not swallowed: `datacrafter run` exits
+non-zero, the console shows the error, and `state.json` marks the `processor`
+or `destination` stage as `fail` with the error text. Check the destination
+path permissions and disk space, then re-run (`current/` files are kept).
+
 ## ZIP treated as a stream
 
 If the source is a ZIP of XML files, set processor `config.type: zipxml` and

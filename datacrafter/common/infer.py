@@ -146,10 +146,10 @@ def analyze_records(
         top_n: int = 10) -> Tuple[Dict[str, str], dict]:
     """Return (field_types, metrics) for an iterable of dict records."""
     total = 0
-    nulls = Counter()
-    values = defaultdict(Counter)
-    present = Counter()
-    sample = []
+    nulls: Counter = Counter()
+    values: defaultdict = defaultdict(Counter)
+    present: Counter = Counter()
+    sample: list = []
     for record in records:
         if not isinstance(record, dict):
             continue

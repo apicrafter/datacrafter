@@ -11,12 +11,14 @@ except ImportError:
     pq = None
 
 from .._registry import register_destination
-from .base import BaseDestination
+from .base import BaseFileDestination
 
 
 @register_destination("file-parquet")
-class ParquetDestination(BaseDestination):
+class ParquetDestination(BaseFileDestination):
     """Buffer records and write a Parquet file on close."""
+
+    FILE_EXTENSION = 'parquet'
 
     def __init__(self, filename, compression=None):
         if not HAS_PYARROW:

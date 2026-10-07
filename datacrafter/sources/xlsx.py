@@ -13,6 +13,18 @@ from .base import BaseFileSource
 @register_source("xlsx")
 class XLSXSource(BaseFileSource):
     """XLSX source implementation."""
+
+    @classmethod
+    def from_config(cls, filename=None, stream=None, options=None):
+        options = options or {}
+        if not options.get('keys'):
+            raise ValueError(
+                f"XLSX source requires the 'keys' option; got: {sorted(options)}")
+        return cls(
+            filename=filename,
+            keys=options['keys'].split(','),
+            start_line=options.get('start_line', 0))
+
     def __init__(self, filename=None, stream=None, keys=None, page=0, start_line=1):
         if not HAS_OPENPYXL:
             raise ImportError(
@@ -59,16 +71,3 @@ class XLSXSource(BaseFileSource):
         result = dict(zip(self.keys, tmp))
         self.pos += 1
         return result
-
-    def read_bulk(self, num):
-        """Read bulk XLSX records"""
-        chunk = []
-        for _ in range(0, num):
-            row = next(self.iter)
-            tmp = []
-            for cell in row:
-                tmp.append(str(cell.value))
-            result = dict(zip(self.keys, tmp))
-            chunk.append(result)
-            self.pos += 1
-        return chunk

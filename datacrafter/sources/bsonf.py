@@ -4,7 +4,7 @@ try:
     HAS_BSON = True
 except ImportError:
     HAS_BSON = False
-    bson = None
+    bson = None  # type: ignore[assignment]
 
 from .._registry import register_source
 from .base import BaseFileSource
@@ -13,6 +13,12 @@ from .base import BaseFileSource
 @register_source("bson")
 class BSONSource(BaseFileSource):
     """BSON file source implementation."""
+    COMPRESSION_MODE = 'binary'
+
+    @classmethod
+    def from_config(cls, filename=None, stream=None, options=None):
+        return cls(filename=filename, stream=stream)
+
     def __init__(self, filename=None, stream=None):
         if not HAS_BSON:
             raise ImportError(
@@ -21,7 +27,6 @@ class BSONSource(BaseFileSource):
             )
         super().__init__(filename, stream, binary=True)
         self.reset()
-        pass
 
     def reset(self):
         super().reset()
@@ -31,12 +36,5 @@ class BSONSource(BaseFileSource):
         return 'bson'
 
     def read(self):
-        """Write single bson record"""
+        """Read single bson record"""
         return next(self.reader)
-
-    def read_bulk(self, num):
-        """Read bulk bson record"""
-        chunk = []
-        for _ in range(0, num):
-            chunk.append(next(self.reader))
-        return chunk

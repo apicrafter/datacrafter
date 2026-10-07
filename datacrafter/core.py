@@ -9,16 +9,12 @@ import typer
 import yaml
 
 from .cmds.project import Project, load_config
-from .common.logconfig import configure_logging
+from .common.logconfig import set_log_level
 from .common.validation import check_environment, validate_config
 from .destinations import list_destinations
 from .extractors import list_extractors
 from .extractors.base import DataCrafterConfigurationError
 from .sources import list_sources
-
-# Default logging for `python -m datacrafter` and library imports.
-# Project.enable_logging() replaces handlers when a pipeline actually runs.
-configure_logging(logging.INFO)
 
 # Create Typer app
 app = typer.Typer(
@@ -34,11 +30,7 @@ app.add_typer(config_app, name="config")
 
 def enable_verbose():
     """Enable verbose logging"""
-    root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG)
-    # Update all existing handlers to DEBUG level
-    for handler in root_logger.handlers:
-        handler.setLevel(logging.DEBUG)
+    set_log_level(logging.DEBUG)
 
 
 def get_project_path(path: Optional[str]) -> str:
@@ -81,11 +73,7 @@ def run(
 ):
     """Execute data pipeline"""
     if quiet:
-        # Set logging to ERROR level only
-        root_logger = logging.getLogger()
-        root_logger.setLevel(logging.ERROR)
-        for handler in root_logger.handlers:
-            handler.setLevel(logging.ERROR)
+        set_log_level(logging.ERROR)
     elif verbose:
         enable_verbose()
 
