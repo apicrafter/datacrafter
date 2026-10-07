@@ -58,7 +58,7 @@ zip-safe = false
 
 [project.optional-dependencies]
 parquet = ["pyarrow>=14.0.0"]
-compression = ["zstandard>=0.18.0"]
+compression = ["zstandard>=0.25.0"]
 
 [tool.ruff]
 line-length = 88
