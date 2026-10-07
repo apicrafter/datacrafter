@@ -57,27 +57,27 @@ jobs:
           name: dist
           path: dist/
 
-  # PyPI publishing is disabled: the `datacrafter` name on PyPI belongs to
-  # an unrelated project (owner: Darshan Kumar). Re-enable this job after
-  # claiming a new distribution name and configuring a trusted publisher at
-  # https://pypi.org/manage/account/publishing/
-  #
-  # publish:
-  #   name: Publish to PyPI (Trusted Publishing)
-  #   needs: build
-  #   runs-on: ubuntu-latest
-  #   environment: pypi
-  #   permissions:
-  #     id-token: write
-  #   steps:
-  #     - name: Download build artifacts
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: dist
-  #         path: dist/
-  #
-  #     - name: Publish to PyPI
-  #       uses: pypa/gh-action-pypi-publish@release/v1
+  publish:
+    name: Publish to PyPI (Trusted Publishing)
+    needs: build
+    runs-on: ubuntu-latest
+    # Trusted Publishing (OIDC) - no long-lived API tokens. The distribution
+    # name on PyPI is `datacrafter-etl` (plain `datacrafter` is taken by an
+    # unrelated project). Requires a pending publisher configured at
+    # https://pypi.org/manage/account/publishing/ (owner apicrafter, this
+    # repository, publish.yml, environment `pypi`).
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
 
   release:
     name: Create GitHub Release

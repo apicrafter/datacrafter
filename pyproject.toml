@@ -3,8 +3,8 @@ requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "datacrafter"
-description = "datacrafter: a command-line ETL tool with NoSQL in mind"
+name = "datacrafter-etl"
+description = "datacrafter-etl: a command-line ETL tool with NoSQL in mind (import datacrafter)"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 authors = [

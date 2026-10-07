@@ -7,11 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- Install instructions no longer point at PyPI: the `datacrafter` name there
-  belongs to an unrelated project. Releases are distributed from GitHub
-  (wheel artifacts on the release page, or `pip install git+...`); the PyPI
-  publish job is disabled until a distribution name is claimed.
+## [2.0.1] - 2026-10-07
+
+### Changed
+- **PyPI distribution renamed to `datacrafter-etl`** (the `datacrafter` name
+  on PyPI belongs to an unrelated project). The Python module and the
+  `datacrafter` CLI command are unchanged; install with
+  `pip install datacrafter-etl`. The PyPI publish job is re-enabled for the
+  new name.
 
 ## [2.0.0] - 2026-10-07
 

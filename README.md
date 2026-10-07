@@ -21,14 +21,21 @@ Reserved in CLI but **not implemented yet**: `builds` / `push` / `ui`, automatic
 
 ## Installation
 
-> **Note:** the `datacrafter` name on PyPI belongs to an unrelated project,
-> so releases are distributed from GitHub only.
+The distribution is published on PyPI as **`datacrafter-etl`** (the `datacrafter`
+name there belongs to an unrelated project). The Python module and the CLI
+command stay `datacrafter`.
 
-### From a GitHub release (recommended)
+### Using pip (recommended)
+
+```bash
+pip install datacrafter-etl
+```
+
+### From a GitHub release
 
 ```bash
 pip install \
-  https://github.com/apicrafter/datacrafter/releases/download/v2.0.0/datacrafter-2.0.0-py3-none-any.whl
+  https://github.com/apicrafter/datacrafter/releases/download/v2.0.1/datacrafter_etl-2.0.1-py3-none-any.whl
 ```
 
 ### From git

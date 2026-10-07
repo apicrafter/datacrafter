@@ -11,8 +11,7 @@ Short paths to a first pipeline. New to Datacrafter? Pick a role in the
 ## CSV URL → JSONL in a minute
 
 ```bash
-# See Installation: releases come from GitHub, not PyPI
-pip install git+https://github.com/apicrafter/datacrafter.git
+pip install datacrafter-etl
 datacrafter init my-project
 cd my-project
 ```

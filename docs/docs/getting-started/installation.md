@@ -7,16 +7,16 @@ description: "Install Datacrafter with pip or from source"
 
 Datacrafter requires **Python 3.10 or newer**.
 
-> The `datacrafter` name on PyPI belongs to an unrelated project; releases
-> are distributed from GitHub.
+The PyPI distribution is **`datacrafter-etl`** (the `datacrafter` name on
+PyPI belongs to an unrelated project). The Python module and the CLI command
+stay `datacrafter`.
 
-## From a GitHub release (recommended)
+## Using pip (recommended)
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install \
-  https://github.com/apicrafter/datacrafter/releases/download/v2.0.0/datacrafter-2.0.0-py3-none-any.whl
+pip install datacrafter-etl
 datacrafter version
 ```
 
