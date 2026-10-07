@@ -2,7 +2,7 @@
 # Minimum versions chosen to be free of known CVEs and compatible
 # with the supported Python range (3.9-3.13).
 typer>=0.9.0
-openpyxl>=3.0.5
+openpyxl>=3.1.5
 pymongo>=4.6.0
 tqdm>=4.70.1
 xlrd>=1.2.0
