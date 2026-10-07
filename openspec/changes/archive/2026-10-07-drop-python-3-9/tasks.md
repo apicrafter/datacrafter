@@ -15,4 +15,4 @@
 
 ## 4. Validation
 - [x] 4.1 Local: pytest, ruff, mypy, pylint, openspec validate
-- [ ] 4.2 Push; CI green on the 3.10–3.13 matrix
+- [x] 4.2 Push; CI green on the 3.10–3.13 matrix (commit 152dae0: Tests/Pylint/CodeQL success)
