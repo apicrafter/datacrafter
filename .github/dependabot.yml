@@ -10,7 +10,8 @@ updates:
   - package-ecosystem: npm
     directory: "/docs"
     schedule:
-      interval: weekly
+      # Daily while critical advisories (tinypool) remain open in the docs tree.
+      interval: daily
     commit-message:
       prefix: "build(deps)"
 
