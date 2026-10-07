@@ -52,7 +52,7 @@ across workflows.
 - **WHEN** the workflow files are inspected
 - **THEN** they use `actions/checkout@v4+`, `actions/setup-python@v5+`,
 `github/codeql-action@v3+`, current majors of stale/codecov actions, and test against
-Python 3.9 through 3.13 in every job that lints or tests the package
+Python 3.10 through 3.13 (no EOL 3.9)
 
 ### Requirement: Workflow Concurrency Control
 Test, lint, and publish workflows SHALL define concurrency groups keyed by workflow
