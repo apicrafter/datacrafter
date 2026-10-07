@@ -14,6 +14,6 @@
 ## 2. Verification
 - [ ] 2.1 Open a throwaway PR: confirm single queued run per workflow with
   cancel-in-progress on a follow-up push
-- [ ] 2.2 Confirm scheduled audit job goes green on `main` (manual
-  `workflow_dispatch` first)
+- [x] 2.2 Audit job confirmed green on `main` (pip-audit of the resolved
+  environment ran in the Tests workflow, run 37607923913)
 - [x] 2.3 Dry-run release notes generation against the existing `v1.0.4` tag content (verified locally: awk extracts the 1.0.4 section)
