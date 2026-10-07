@@ -76,7 +76,21 @@ jobs:
           name: dist
           path: dist/
 
-      - name: Publish to PyPI
+      - name: Publish to PyPI (API token, when PYPI_API_TOKEN is set)
+        # Dual-mode: with the secret present this publishes by token
+        # (pypi.org/manage/account/token/); without it the next step uses
+        # Trusted Publishing (pending publisher at
+        # pypi.org/manage/account/publishing/: project datacrafter-etl,
+        # owner apicrafter, repo datacrafter, workflow publish.yml,
+        # environment pypi).
+        if: ${{ secrets.PYPI_API_TOKEN != '' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Publish to PyPI (Trusted Publishing)
+        if: ${{ secrets.PYPI_API_TOKEN == '' }}
         uses: pypa/gh-action-pypi-publish@release/v1
 
   release:
