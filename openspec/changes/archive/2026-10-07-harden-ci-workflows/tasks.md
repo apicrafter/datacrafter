@@ -12,7 +12,8 @@
 - [x] 1.7 Add `.github/CODEOWNERS` (@apicrafter/datacrafter or the active maintainer)
 
 ## 2. Verification
-- [x] 2.1 Cancel-in-progress verified on the archive PR branch (superseded run cancelled by a follow-up push): confirm single queued run per workflow with
+- [x] 2.1 Verified on PR #117: a follow-up push to the PR branch cancelled the
+  in-progress Tests/CodeQL runs via the concurrency groups: confirm single queued run per workflow with
   cancel-in-progress on a follow-up push
 - [x] 2.2 Audit job confirmed green on `main` (pip-audit of the resolved
   environment ran in the Tests workflow, run 37607923913)
