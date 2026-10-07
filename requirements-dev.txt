@@ -11,7 +11,9 @@ pycodestyle
 pylint>=3.3.0,<4; python_version < "3.10"
 pylint>=4.0.0; python_version >= "3.10"
 ruff>=0.8.0
-pre-commit>=3.0.0
+# pre-commit 4.6+ requires Python 3.10+; keep the last 3.9 series there.
+pre-commit>=3.0.0,<4.4; python_version < "3.10"
+pre-commit>=4.6.2; python_version >= "3.10"
 mypy>=1.8.0
 types-PyYAML
 twine
